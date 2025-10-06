@@ -40,7 +40,7 @@ function Stars({ value = 0 }) {
 }
 
 export default function ProductDetail() {
-  const { id } = useLocalSearchParams(); // Lấy id từ tham số điều hướng
+  const { id } = useLocalSearchParams();
   const pid = Number(id);
   const navigation = useNavigation();
   const queryClient = useQueryClient();
@@ -48,12 +48,14 @@ export default function ProductDetail() {
   const { setCount } = useCart();
   const me = React.useMemo(() => (token ? decodeJwt(token) : null), [token]);
 
+  console.log("Auth state:", { user, token, me });
+
   const { data: product, isLoading: loadingProduct, error: errProduct } = useQuery({
     queryKey: ["product", pid],
     queryFn: () => getProduct(pid),
     onError: (err) => {
       console.error("Error fetching product:", err);
-      Alert.alert("Lỗi tải sản phẩm", err?.message || "Không tải được dữ liệu sản phẩm. Vui lòng kiểm tra kết nối hoặc ID sản phẩm.");
+      Alert.alert("Lỗi tải sản phẩm", err?.message || "Không tải được dữ liệu sản phẩm.");
     },
   });
 
@@ -80,7 +82,10 @@ export default function ProductDetail() {
       setCount(totalQty);
       Alert.alert("Thành công", "Đã thêm vào giỏ hàng");
     },
-    onError: (e) => Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Thêm vào giỏ thất bại"),
+    onError: (e) => {
+      console.error("Add to cart error:", e?.response?.data || e?.message);
+      Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Thêm vào giỏ thất bại");
+    },
   });
 
   const createReviewMutation = useMutation({
@@ -114,10 +119,6 @@ export default function ProductDetail() {
   };
 
   const handleSubmitReview = () => {
-    if (!user) {
-      navigation.navigate("login", { redirect: "product", id: pid });
-      return;
-    }
     createReviewMutation.mutate();
   };
 
@@ -133,11 +134,11 @@ export default function ProductDetail() {
   }
 
   if (errProduct || !product) {
-    console.log("Product data:", product); // Log dữ liệu sản phẩm để kiểm tra
-    console.log("Product error:", errProduct); // Log lỗi nếu có
+    console.log("Product data:", product);
+    console.log("Product error:", errProduct);
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.mutedText}>Không tìm thấy sản phẩm. Kiểm tra console để xem lỗi chi tiết.</Text>
+        <Text style={styles.mutedText}>Không tìm thấy sản phẩm.</Text>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.navigate("home")}
@@ -150,13 +151,10 @@ export default function ProductDetail() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Product Image */}
       <Image
         source={{ uri: product.imageUrl || "https://via.placeholder.com/300" }}
         style={styles.productImage}
       />
-
-      {/* Product Info */}
       <View style={styles.section}>
         <Text style={styles.productName}>{product.name}</Text>
         <View style={styles.ratingRow}>
@@ -166,8 +164,6 @@ export default function ProductDetail() {
         <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
         <Text style={styles.productDesc}>{product.description || "Không có mô tả."}</Text>
       </View>
-
-      {/* Quantity and Add to Cart */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Số lượng</Text>
         <View style={styles.qtyRow}>
@@ -195,8 +191,6 @@ export default function ProductDetail() {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Reviews */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Đánh giá</Text>
         {reviews.length === 0 ? (
@@ -222,56 +216,42 @@ export default function ProductDetail() {
           ))
         )}
       </View>
-
-      {/* Write Review */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Viết đánh giá</Text>
-        {!user ? (
-          <View>
-            <Text style={styles.mutedText}>Vui lòng đăng nhập để viết đánh giá.</Text>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => navigation.navigate("login", { redirect: "product", id: pid })}
-            >
-              <Text style={styles.loginButtonText}>Đăng nhập</Text>
-            </TouchableOpacity>
+        <View style={styles.reviewForm}>
+          <Text style={styles.label}>Điểm (1–5)</Text>
+          <View style={styles.ratingSelect}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.ratingOption, rating === n && styles.ratingSelected]}
+                onPress={() => setRating(n)}
+              >
+                <Text style={[styles.ratingOptionText, rating === n && styles.ratingOptionTextSelected]}>
+                  {n}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        ) : (
-          <View style={styles.reviewForm}>
-            <Text style={styles.label}>Điểm (1–5)</Text>
-            <View style={styles.ratingSelect}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <TouchableOpacity
-                  key={n}
-                  style={[styles.ratingOption, rating === n && styles.ratingSelected]}
-                  onPress={() => setRating(n)}
-                >
-                  <Text style={[styles.ratingOptionText, rating === n && styles.ratingOptionTextSelected]}>
-                    {n}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.label}>Nhận xét</Text>
-            <TextInput
-              style={styles.commentInput}
-              multiline
-              numberOfLines={4}
-              placeholder="Cảm nhận của bạn về sản phẩm…"
-              value={comment}
-              onChangeText={setComment}
-            />
-            <TouchableOpacity
-              style={[styles.submitButton, createReviewMutation.isPending && styles.disabledButton]}
-              onPress={handleSubmitReview}
-              disabled={createReviewMutation.isPending}
-            >
-              <Text style={styles.submitButtonText}>
-                {createReviewMutation.isPending ? "Đang gửi..." : "Gửi đánh giá"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          <Text style={styles.label}>Nhận xét</Text>
+          <TextInput
+            style={styles.commentInput}
+            multiline
+            numberOfLines={4}
+            placeholder="Cảm nhận của bạn về sản phẩm…"
+            value={comment}
+            onChangeText={setComment}
+          />
+          <TouchableOpacity
+            style={[styles.submitButton, createReviewMutation.isPending && styles.disabledButton]}
+            onPress={handleSubmitReview}
+            disabled={createReviewMutation.isPending}
+          >
+            <Text style={styles.submitButtonText}>
+              {createReviewMutation.isPending ? "Đang gửi..." : "Gửi đánh giá"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -476,18 +456,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  loginButton: {
-    padding: 12,
-    backgroundColor: "#007bff",
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  loginButtonText: {
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
