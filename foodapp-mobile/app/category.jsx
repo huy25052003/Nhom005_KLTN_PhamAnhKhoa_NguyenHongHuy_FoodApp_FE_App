@@ -77,12 +77,6 @@ export default function Category() {
       <TouchableOpacity style={styles.addButton} onPress={() => onAdd(product)}>
         <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.detailButton}
-        onPress={() => router.push(`/product?id=${product.id}`)}
-      >
-        <Text style={styles.detailButtonText}>Xem chi tiết</Text>
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
