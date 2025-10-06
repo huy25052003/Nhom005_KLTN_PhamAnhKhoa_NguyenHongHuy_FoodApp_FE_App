@@ -5,6 +5,7 @@ import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { getFeaturedProducts, getCategoriesPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
+import { useMe } from "../src/api/hooks";
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -19,6 +20,7 @@ export default function Home() {
   const { user, clear } = useAuth();
   const { setCount } = useCart();
   const navigation = useNavigation();
+  const { data: me } = useMe();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,10 +120,14 @@ export default function Home() {
     );
   }
 
+  console.log("User state in Home:", user, "Me state:", me);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Xin chào, {user?.username || "Khách"}!</Text>
+        <Text style={styles.headerTitle}>
+          {me?.username || (typeof user === "string" ? `Xin chào, ${user}!` : user?.username ? `Xin chào, ${user.username}!` : "Xin chào, Khách!")}
+        </Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
@@ -230,15 +236,8 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,40 +247,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-  },
-  logoutButton: {
-    padding: 8,
-    backgroundColor: "#dc3545",
-    borderRadius: 6,
-  },
-  logoutText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  hero: {
-    padding: 16,
-    backgroundColor: "#fff",
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 12,
-  },
-  heroSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 16,
-  },
-  heroActions: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
+  headerTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
+  logoutButton: { padding: 8, backgroundColor: "#dc3545", borderRadius: 6 },
+  logoutText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  hero: { padding: 16, backgroundColor: "#fff" },
+  heroTitle: { fontSize: 24, fontWeight: "700", color: "#333", marginBottom: 12 },
+  heroSubtitle: { fontSize: 16, color: "#666", marginBottom: 16 },
+  heroActions: { flexDirection: "row", marginBottom: 16 },
   primaryButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -289,11 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 12,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
+  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
   ghostButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -301,36 +269,13 @@ const styles = StyleSheet.create({
     borderColor: "#007bff",
     borderRadius: 6,
   },
-  ghostButtonText: {
-    color: "#007bff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  heroUsps: {
-    paddingTop: 8,
-  },
-  uspItem: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  section: {
-    padding: 16,
-  },
-  sectionAlt: {
-    backgroundColor: "#f8f8f8",
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 12,
-  },
-  howtoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  ghostButtonText: { color: "#007bff", fontWeight: "600", fontSize: 16 },
+  heroUsps: { paddingTop: 8 },
+  uspItem: { fontSize: 14, color: "#666", marginBottom: 8 },
+  section: { padding: 16 },
+  sectionAlt: { backgroundColor: "#f8f8f8" },
+  sectionTitle: { fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 12 },
+  howtoGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   howtoItem: {
     width: "48%",
     backgroundColor: "#fff",
@@ -353,26 +298,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  howtoStepText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  howtoText: {
-    fontSize: 14,
-    color: "#333",
-    textAlign: "center",
-  },
-  grid4: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  grid6: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  howtoStepText: { color: "#fff", fontSize: 18, fontWeight: "600" },
+  howtoText: { fontSize: 14, color: "#333", textAlign: "center" },
+  grid4: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  grid6: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   planCard: {
     width: "48%",
     backgroundColor: "#fff",
@@ -397,33 +326,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontSize: 12,
   },
-  planName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  planDesc: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  planPrice: {
-    fontSize: 14,
-    color: "#007bff",
-    marginBottom: 8,
-  },
-  planButton: {
-    padding: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  planButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+  planName: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 4 },
+  planDesc: { fontSize: 14, color: "#666", marginBottom: 8 },
+  planPrice: { fontSize: 14, color: "#007bff", marginBottom: 8 },
+  planButton: { padding: 10, backgroundColor: "#007bff", borderRadius: 6, alignItems: "center" },
+  planButtonText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   categoryCard: {
     width: "32%",
     backgroundColor: "#fff",
@@ -437,11 +344,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  categoryName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
+  categoryName: { fontSize: 14, fontWeight: "600", color: "#333" },
   productCard: {
     width: "48%",
     backgroundColor: "#fff",
@@ -454,28 +357,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  productImage: {
-    width: "100%",
-    height: 180,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  productInfo: {
-    marginBottom: 8,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-  productPrice: {
-    fontSize: 14,
-    color: "#007bff",
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  productImage: { width: "100%", height: 180, borderRadius: 8, marginBottom: 8 },
+  productInfo: { marginBottom: 8 },
+  productName: { fontSize: 14, fontWeight: "600", color: "#333" },
+  productPrice: { fontSize: 14, color: "#007bff" },
+  cardActions: { flexDirection: "row", justifyContent: "space-between" },
   actionButton: {
     flex: 1,
     padding: 10,
@@ -484,11 +370,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 6,
   },
-  actionText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+  actionText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   ghostButton: {
     flex: 1,
     padding: 10,
@@ -497,16 +379,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center",
   },
-  ghostButtonText: {
-    color: "#007bff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  grid3: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  ghostButtonText: { color: "#007bff", fontWeight: "600", fontSize: 14 },
+  grid3: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   ecoCard: {
     width: "32%",
     backgroundColor: "#fff",
@@ -520,17 +394,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  ecoText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    textAlign: "center",
-  },
-  logoRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  ecoText: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
+  logoRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   logoBox: {
     width: "18%",
     height: 60,
@@ -543,21 +408,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  ctaButton: {
-    padding: 12,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  ctaText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  mutedText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    width: "100%",
-  },
+  ctaButton: { padding: 12, backgroundColor: "#007bff", borderRadius: 6, alignItems: "center" },
+  ctaText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  mutedText: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
 });

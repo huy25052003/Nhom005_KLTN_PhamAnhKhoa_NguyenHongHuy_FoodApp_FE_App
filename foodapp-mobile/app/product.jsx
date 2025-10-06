@@ -62,6 +62,7 @@ export default function ProductDetail() {
   const { data: reviews = [], isLoading: loadingReviews } = useQuery({
     queryKey: ["reviews", pid],
     queryFn: () => listReviews(pid),
+    onSuccess: (data) => console.log("Reviews data:", data), // Log dữ liệu để debug
   });
 
   const { data: avgRating = 0 } = useQuery({
@@ -199,7 +200,7 @@ export default function ProductDetail() {
           reviews.map((r) => (
             <View key={r.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
-                <Text style={styles.reviewUser}>{r.user?.username || "Khách"}</Text>
+                <Text style={styles.reviewUser}>{r.userName || r.user?.username || "Khách"}</Text>
                 <Stars value={r.rating} />
               </View>
               {r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}

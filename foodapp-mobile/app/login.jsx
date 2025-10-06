@@ -13,6 +13,7 @@ export default function Login() {
   const submit = async () => {
     try {
       const out = await login.mutateAsync({ username, password });
+      console.log("Login response:", out); // Log để kiểm tra dữ liệu
       await setAuth(out.user ?? null, out.token);
       router.replace("/home");
     } catch (e) {

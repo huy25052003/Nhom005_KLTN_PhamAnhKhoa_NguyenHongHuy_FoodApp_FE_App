@@ -1,17 +1,19 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
+import { getMe } from "../api/usres";
 
 export const useAuth = create((set) => ({
   user: null,
   token: null,
   setAuth: async (user, token) => {
     if (token && !user) {
-      // Decode user from token if not provided
       try {
         const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-        user = payload.sub || payload.username || null;
+        user = { username: payload.sub || payload.username || null };
       } catch (e) {
         console.error("Error decoding user from token:", e);
+        const meData = await getMe();
+        user = meData?.username ? { username: meData.username } : null;
       }
     }
     try {
@@ -43,6 +45,10 @@ export const useAuth = create((set) => ({
       const t = await SecureStore.getItemAsync("access_token");
       const u = await SecureStore.getItemAsync("user");
       const user = u ? JSON.parse(u) : null;
+      if (t && !user) {
+        const meData = await getMe();
+        user = meData?.username ? { username: meData.username } : null;
+      }
       set({ user, token: t ?? null });
       console.log("Hydrated auth state:", { user, token: t ?? null });
     } catch (e) {
