@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
-import { getMe } from "../api/usres";
+import { getMe } from "../api/user";
 
 export const useAuth = create((set) => ({
   user: null,

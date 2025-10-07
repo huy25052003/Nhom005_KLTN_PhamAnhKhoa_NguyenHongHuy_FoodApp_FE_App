@@ -39,7 +39,7 @@ function Stars({ value = 0 }) {
   );
 }
 
-export default function ProductDetail() {
+export default function Product() {
   const { id } = useLocalSearchParams();
   const pid = Number(id);
   const navigation = useNavigation();

@@ -25,13 +25,32 @@ export default function Login() {
   return (
     <View style={{ flex: 1, padding: 16, gap: 12, justifyContent: "center" }}>
       <Text style={{ fontSize: 24, fontWeight: "700" }}>Đăng nhập</Text>
-      <TextInput placeholder="Username" autoCapitalize="none" value={username} onChangeText={setU}
-        style={{ backgroundColor: "#f2f2f2", padding: 12, borderRadius: 10 }} />
-      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setP}
-        style={{ backgroundColor: "#f2f2f2", padding: 12, borderRadius: 10 }} />
-      <TouchableOpacity onPress={submit} style={{ padding: 12, backgroundColor: "#0a7", borderRadius: 10 }}>
+      <TextInput
+        placeholder="Username"
+        autoCapitalize="none"
+        value={username}
+        onChangeText={setU}
+        style={{ backgroundColor: "#f2f2f2", padding: 12, borderRadius: 10 }}
+      />
+      <TextInput
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setP}
+        style={{ backgroundColor: "#f2f2f2", padding: 12, borderRadius: 10 }}
+      />
+      <TouchableOpacity
+        onPress={submit}
+        style={{ padding: 12, backgroundColor: "#0a7", borderRadius: 10 }}
+        disabled={login.isPending}
+      >
         <Text style={{ color: "white", textAlign: "center", fontWeight: "600" }}>
           {login.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/register")}>
+        <Text style={{ textAlign: "center", color: "#007bff", fontSize: 16 }}>
+          Chưa có tài khoản? Đăng ký
         </Text>
       </TouchableOpacity>
     </View>
