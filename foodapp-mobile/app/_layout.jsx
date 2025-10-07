@@ -13,7 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="category" options={{ title: "Danh mục" }} />
         <Stack.Screen name="product" options={{ title: "Sản phẩm" }} />
         <Stack.Screen name="register" options={{ title: "Đăng ký" }} />
-        {/* <Stack.Screen name="shippinginfo" options={{ title: "Thông tin giao hàng" }} /> */}
+        <Stack.Screen name="shippinginfo" options={{ title: "Thông tin giao hàng" }} />
       </Stack>
     </QueryClientProvider>
   );

@@ -65,6 +65,10 @@ export default function Home() {
     navigation.replace("login");
   };
 
+  const handleShippingInfo = () => {
+    navigation.navigate("shippinginfo");
+  };
+
   const renderProduct = (product) => (
     <TouchableOpacity
       key={product.id}
@@ -128,9 +132,14 @@ export default function Home() {
         <Text style={styles.headerTitle}>
           {me?.username || (typeof user === "string" ? `Xin chào, ${user}!` : user?.username ? `Xin chào, ${user.username}!` : "Xin chào, Khách!")}
         </Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity onPress={handleShippingInfo} style={styles.shippingButton}>
+            <Text style={styles.shippingText}>Thông tin giao hàng</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.hero}>
@@ -250,6 +259,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
   logoutButton: { padding: 8, backgroundColor: "#dc3545", borderRadius: 6 },
   logoutText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  shippingButton: { padding: 8, backgroundColor: "#0a7", borderRadius: 6 },
+  shippingText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   hero: { padding: 16, backgroundColor: "#fff" },
   heroTitle: { fontSize: 24, fontWeight: "700", color: "#333", marginBottom: 12 },
   heroSubtitle: { fontSize: 16, color: "#666", marginBottom: 16 },

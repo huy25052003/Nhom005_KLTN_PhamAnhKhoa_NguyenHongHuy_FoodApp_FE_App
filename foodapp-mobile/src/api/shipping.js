@@ -2,7 +2,7 @@ import { api } from "./axios";
 
 export async function getMyShipping() {
   try {
-    const res = await api.get("/shipping/me");
+    const res = await api.get("api/shipping/me");
     console.log("Get shipping response:", res.data);
     return res.data;
   } catch (error) {
@@ -13,7 +13,7 @@ export async function getMyShipping() {
 
 export async function upsertMyShipping(payload) {
   try {
-    const res = await api.put("/shipping/me", payload, {
+    const res = await api.put("api/shipping/me", payload, {
       headers: { "Content-Type": "application/json" },
     });
     console.log("Upsert shipping response:", res.data);
