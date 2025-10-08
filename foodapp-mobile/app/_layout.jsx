@@ -14,6 +14,9 @@ export default function RootLayout() {
         <Stack.Screen name="product" options={{ title: "Sản phẩm" }} />
         <Stack.Screen name="register" options={{ title: "Đăng ký" }} />
         <Stack.Screen name="shippinginfo" options={{ title: "Thông tin giao hàng" }} />
+        <Stack.Screen name="checkout" options={{ title: "Thanh toán" }} />
+        <Stack.Screen name="order" options={{ title: "Đơn hàng" }} />
+        <Stack.Screen name="paymentresult" options={{ title: "Kết quả thanh toán" }} />
       </Stack>
     </QueryClientProvider>
   );

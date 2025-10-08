@@ -2,7 +2,7 @@ import { api } from "./axios";
 
 export async function createPaymentLink(orderId) {
   if (!orderId) throw new Error("Thiếu orderId");
-  const res = await api.post(`payments/create/${orderId}`);
+  const res = await api.post(`api/payments/create/${orderId}`);
   return typeof res.data === "string"
     ? res.data
     : (res.data?.url || res.data?.paymentUrl);

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useNavigation } from "expo-router";
+import { router } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCart, updateCartItem, removeCartItem, clearCart, checkout } from "../src/api/cart";
 import { useAuth } from "../src/store/auth";
@@ -18,7 +18,6 @@ import { useCart } from "../src/store/cart";
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
 export default function Cart() {
-  const navigation = useNavigation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { setCount } = useCart();
@@ -68,7 +67,7 @@ export default function Cart() {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       setCount(0);
       Alert.alert("Thành công", `Đơn hàng #${data.orderId || "N/A"} đã được tạo`, [
-        { text: "OK", onPress: () => navigation.navigate("home") },
+        { text: "OK", onPress: () => router.push("/home") },
       ]);
     },
     onError: (e) => Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Thanh toán thất bại"),
@@ -91,7 +90,7 @@ export default function Cart() {
         <Text style={styles.mutedText}>Vui lòng đăng nhập để xem giỏ hàng.</Text>
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => navigation.navigate("login", { redirect: "cart" })}
+          onPress={() => router.push("/login?redirect=cart")}
         >
           <Text style={styles.loginButtonText}>Đăng nhập</Text>
         </TouchableOpacity>
@@ -114,7 +113,7 @@ export default function Cart() {
         <Text style={styles.mutedText}>Giỏ hàng trống</Text>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate("home")}
+          onPress={() => router.push("/home")}
         >
           <Text style={styles.backButtonText}>Quay lại trang chủ</Text>
         </TouchableOpacity>
@@ -130,7 +129,7 @@ export default function Cart() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Giỏ hàng</Text>
@@ -189,11 +188,11 @@ export default function Cart() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.checkoutButton, checkoutMutation.isPending && styles.disabledButton]}
-            onPress={() => checkoutMutation.mutate()}
+            onPress={() => router.push("/checkout")}
             disabled={checkoutMutation.isPending}
           >
             <Text style={styles.checkoutButtonText}>
-              {checkoutMutation.isPending ? "Đang thanh toán..." : "Thanh toán"}
+              Thanh toán
             </Text>
           </TouchableOpacity>
         </View>
