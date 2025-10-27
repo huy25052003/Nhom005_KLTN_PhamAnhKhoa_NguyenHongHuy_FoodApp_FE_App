@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from "react-native";
 import { useNavigation } from "expo-router";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
@@ -7,6 +7,7 @@ import { getFeaturedProducts, getCategoriesPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -160,43 +161,89 @@ export default function Home() {
   console.log("User state in Home:", user, "Me state:", me);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {me?.username || (typeof user === "string" ? `Xin chào, ${user}!` : user?.username ? `Xin chào, ${user.username}!` : "Xin chào, Khách!")}
-        </Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {user && (
-            <TouchableOpacity onPress={() => navigation.navigate("favorites")} style={styles.favoritesButton}>
-              <Text style={styles.favoritesText}>❤️ Yêu thích</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Text style={styles.logoutText}>Đăng xuất</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1a73e8" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={['#1a73e8', '#0d47a1']}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerGreeting}>Xin chào!</Text>
+              <Text style={styles.headerTitle}>
+                {me?.username || user?.username || "Khách"}
+              </Text>
+            </View>
+            <View style={styles.headerActions}>
+              {user ? (
+                <>
+                  <TouchableOpacity 
+                    onPress={() => navigation.navigate("favorites")} 
+                    style={styles.headerIconButton}
+                  >
+                    <Text style={styles.headerIcon}>❤️</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleLogout} 
+                    style={styles.headerIconButton}
+                  >
+                    <Text style={styles.headerIcon}>🚪</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate("login")} 
+                  style={styles.headerLoginButton}
+                >
+                  <Text style={styles.headerLoginText}>Đăng nhập</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("cart")} 
+                style={styles.headerIconButton}
+              >
+                <Text style={styles.headerIcon}>🛒</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </LinearGradient>
 
-      <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Kế hoạch bữa ăn hàng tuần cho lối sống lành mạnh</Text>
-        <Text style={styles.heroSubtitle}>Trải nghiệm bữa ăn sạch tươi ngon, giàu dinh dưỡng — lên plan theo mục tiêu của bạn.</Text>
-        <View style={styles.heroActions}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate("order")}
-          >
-            <Text style={styles.buttonText}>Đặt ngay</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.ghostButton}>
-            <Text style={styles.ghostButtonText}>Tư vấn</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.heroUsps}>
-          <Text style={styles.uspItem}>• Giao tận nơi mỗi ngày</Text>
-          <Text style={styles.uspItem}>• Thực đơn đa dạng 100+ món</Text>
-          <Text style={styles.uspItem}>• Tuỳ chỉnh theo mục tiêu (giảm cân / tăng cơ / eat clean)</Text>
-        </View>
-      </View>
+        {/* Hero Section with Gradient */}
+        <LinearGradient
+          colors={['#fff5f5', '#ffffff']}
+          style={styles.hero}
+        >
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>Kế hoạch bữa ăn lành mạnh</Text>
+            <Text style={styles.heroSubtitle}>
+              Thực đơn đa dạng, dinh dưỡng cân đối — theo mục tiêu của bạn
+            </Text>
+            <View style={styles.heroActions}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => navigation.navigate("order")}
+              >
+                <Text style={styles.buttonText}>🍽️ Đặt ngay</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.heroFeatures}>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureIcon}>🚚</Text>
+                <Text style={styles.featureText}>Giao tận nơi</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureIcon}>🥗</Text>
+                <Text style={styles.featureText}>100+ món</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureIcon}>💪</Text>
+                <Text style={styles.featureText}>Eat clean</Text>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Cách đặt hàng</Text>
@@ -275,143 +322,253 @@ export default function Home() {
           <Text style={styles.ctaText}>Xem giỏ hàng</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f8f9fa" },
+  
+  // New Header Styles
   header: {
+    paddingTop: 48,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+  },
+  headerGreeting: {
+    fontSize: 14,
+    color: "#e3f2fd",
+    fontWeight: "500",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#fff",
+    marginTop: 4,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  headerIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerIcon: {
+    fontSize: 20,
+  },
+  headerLoginButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 22,
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
   },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
-  logoutButton: { padding: 8, backgroundColor: "#dc3545", borderRadius: 6 },
-  logoutText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  favoritesButton: { padding: 8, backgroundColor: "#ff6b6b", borderRadius: 6 },
-  favoritesText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  shippingButton: { padding: 8, backgroundColor: "#0a7", borderRadius: 6 },
-  shippingText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  hero: { padding: 16, backgroundColor: "#fff" },
-  heroTitle: { fontSize: 24, fontWeight: "700", color: "#333", marginBottom: 12 },
-  heroSubtitle: { fontSize: 16, color: "#666", marginBottom: 16 },
-  heroActions: { flexDirection: "row", marginBottom: 16 },
+  headerLoginText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1a73e8",
+  },
+  
+  // Hero Section
+  hero: {
+    padding: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 20,
+  },
+  heroContent: {
+    alignItems: "center",
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  heroSubtitle: {
+    fontSize: 15,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  heroActions: {
+    width: "100%",
+    marginBottom: 24,
+  },
   primaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
-    marginRight: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: "#1a73e8",
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#1a73e8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  ghostButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: "#007bff",
-    borderRadius: 6,
+  buttonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
   },
-  ghostButtonText: { color: "#007bff", fontWeight: "600", fontSize: 16 },
-  heroUsps: { paddingTop: 8 },
-  uspItem: { fontSize: 14, color: "#666", marginBottom: 8 },
-  section: { padding: 16 },
-  sectionAlt: { backgroundColor: "#f8f8f8" },
-  sectionTitle: { fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 12 },
+  heroFeatures: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  featureItem: {
+    alignItems: "center",
+  },
+  featureIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "600",
+  },
+  
+  // Sections
+  section: { paddingHorizontal: 20, paddingVertical: 16 },
+  sectionAlt: { backgroundColor: "#ffffff", marginVertical: 8, borderRadius: 16, marginHorizontal: 12 },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginBottom: 16,
+  },
+  
+  // How-to Grid
   howtoGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   howtoItem: {
     width: "48%",
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 16,
     alignItems: "center",
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   howtoStep: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#007bff",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#1a73e8",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
+    shadowColor: "#1a73e8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  howtoStepText: { color: "#fff", fontSize: 18, fontWeight: "600" },
-  howtoText: { fontSize: 14, color: "#333", textAlign: "center" },
+  howtoStepText: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  howtoText: { fontSize: 13, color: "#444", textAlign: "center", fontWeight: "600" },
+  
+  // Grids
   grid4: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   grid6: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  grid3: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  
+  // Plan Cards
   planCard: {
     width: "48%",
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     position: "relative",
   },
   badge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "#007bff",
+    top: 12,
+    right: 12,
+    backgroundColor: "#ff6b6b",
     color: "#fff",
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    fontSize: 12,
-  },
-  planName: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 4 },
-  planDesc: { fontSize: 14, color: "#666", marginBottom: 8 },
-  planPrice: { fontSize: 14, color: "#007bff", marginBottom: 8 },
-  planButton: { padding: 10, backgroundColor: "#007bff", borderRadius: 6, alignItems: "center" },
-  planButtonText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  categoryCard: {
-    width: "32%",
-    backgroundColor: "#fff",
-    padding: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 8,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  planName: { fontSize: 15, fontWeight: "700", color: "#1a1a1a", marginBottom: 6 },
+  planDesc: { fontSize: 13, color: "#666", marginBottom: 12 },
+  planPrice: { fontSize: 16, color: "#1a73e8", marginBottom: 12, fontWeight: "700" },
+  planButton: {
+    padding: 12,
+    backgroundColor: "#1a73e8",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  planButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  
+  // Category Cards
+  categoryCard: {
+    width: "31%",
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
-  categoryName: { fontSize: 14, fontWeight: "600", color: "#333" },
+  categoryName: { fontSize: 13, fontWeight: "700", color: "#1a1a1a", textAlign: "center" },
+  
+  // Product Cards
   productCard: {
     width: "48%",
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    position: "relative",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
   },
-  productImage: { width: "100%", height: 180, borderRadius: 8, marginBottom: 8 },
+  productImage: {
+    width: "100%",
+    height: 160,
+    backgroundColor: "#f0f0f0",
+  },
   favoriteButton: {
     position: "absolute",
-    top: 20,
-    right: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 20,
     width: 40,
     height: 40,
@@ -419,62 +576,88 @@ const styles = StyleSheet.create({
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
-  favoriteIcon: { fontSize: 24 },
-  productInfo: { marginBottom: 8 },
-  productName: { fontSize: 14, fontWeight: "600", color: "#333" },
-  productPrice: { fontSize: 14, color: "#007bff" },
-  cardActions: { flexDirection: "row", justifyContent: "space-between" },
+  favoriteIcon: { fontSize: 20 },
+  productInfo: { padding: 12, paddingBottom: 8 },
+  productName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  productPrice: {
+    fontSize: 15,
+    color: "#1a73e8",
+    fontWeight: "700",
+  },
+  cardActions: { padding: 12, paddingTop: 0 },
   actionButton: {
-    flex: 1,
-    padding: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
-    alignItems: "center",
-    marginRight: 6,
-  },
-  actionText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  ghostButton: {
-    flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#007bff",
-    borderRadius: 6,
+    paddingVertical: 10,
+    backgroundColor: "#1a73e8",
+    borderRadius: 10,
     alignItems: "center",
   },
-  ghostButtonText: { color: "#007bff", fontWeight: "600", fontSize: 14 },
-  grid3: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  actionText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  
+  // Eco Cards
   ecoCard: {
-    width: "32%",
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
+    width: "31%",
+    backgroundColor: "#e8f5e9",
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#a5d6a7",
   },
-  ecoText: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
+  ecoText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2e7d32",
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  
+  // Logo Row
   logoRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   logoBox: {
     width: "18%",
     height: 60,
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
-  ctaButton: { padding: 12, backgroundColor: "#007bff", borderRadius: 6, alignItems: "center" },
-  ctaText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  mutedText: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
+  
+  // CTA Button
+  ctaButton: {
+    paddingVertical: 16,
+    backgroundColor: "#1a73e8",
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+    shadowColor: "#1a73e8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ctaText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  
+  // Misc
+  mutedText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    width: "100%",
+    paddingVertical: 20,
+  },
 });
