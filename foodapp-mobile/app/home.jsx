@@ -6,6 +6,7 @@ import { useCart } from "../src/store/cart";
 import { getFeaturedProducts, getCategoriesPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
+import { getFavorites, toggleFavorite } from "../src/api/favorites";
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -24,17 +25,20 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, favRes] = await Promise.all([
           getFeaturedProducts(8),
           getCategoriesPublic(6),
+          user ? getFavorites().catch(() => []) : Promise.resolve([]),
         ]);
         setProducts(Array.isArray(prodRes) ? prodRes : []);
         setCategories(Array.isArray(catRes) ? catRes : []);
+        setFavorites(Array.isArray(favRes) ? favRes : []);
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu:", error);
       } finally {
@@ -42,7 +46,7 @@ export default function Home() {
       }
     }
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleAddToCart = async (product) => {
     if (!user) {
@@ -58,6 +62,24 @@ export default function Home() {
     } catch (e) {
       alert(e?.response?.data?.message || e?.message || "Thêm vào giỏ thất bại");
     }
+  };
+
+  const handleToggleFavorite = async (productId) => {
+    if (!user) {
+      navigation.navigate("login", { redirect: "home" });
+      return;
+    }
+    try {
+      await toggleFavorite(productId);
+      const favRes = await getFavorites();
+      setFavorites(Array.isArray(favRes) ? favRes : []);
+    } catch (e) {
+      console.error("Lỗi khi toggle favorite:", e);
+    }
+  };
+
+  const isFavorite = (productId) => {
+    return favorites.some(fav => fav.id === productId);
   };
 
   const handleLogout = () => {
@@ -79,6 +101,17 @@ export default function Home() {
         source={{ uri: product.imageUrl || "https://via.placeholder.com/150" }}
         style={styles.productImage}
       />
+      <TouchableOpacity
+        style={styles.favoriteButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          handleToggleFavorite(product.id);
+        }}
+      >
+        <Text style={styles.favoriteIcon}>
+          {isFavorite(product.id) ? "❤️" : "🤍"}
+        </Text>
+      </TouchableOpacity>
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{product.name}</Text>
         <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
@@ -133,9 +166,11 @@ export default function Home() {
           {me?.username || (typeof user === "string" ? `Xin chào, ${user}!` : user?.username ? `Xin chào, ${user.username}!` : "Xin chào, Khách!")}
         </Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          {/* <TouchableOpacity onPress={handleShippingInfo} style={styles.shippingButton}>
-            <Text style={styles.shippingText}>Thông tin giao hàng</Text>
-          </TouchableOpacity> */}
+          {user && (
+            <TouchableOpacity onPress={() => navigation.navigate("favorites")} style={styles.favoritesButton}>
+              <Text style={styles.favoritesText}>❤️ Yêu thích</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
@@ -259,6 +294,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
   logoutButton: { padding: 8, backgroundColor: "#dc3545", borderRadius: 6 },
   logoutText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  favoritesButton: { padding: 8, backgroundColor: "#ff6b6b", borderRadius: 6 },
+  favoritesText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   shippingButton: { padding: 8, backgroundColor: "#0a7", borderRadius: 6 },
   shippingText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   hero: { padding: 16, backgroundColor: "#fff" },
@@ -367,8 +404,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    position: "relative",
   },
   productImage: { width: "100%", height: 180, borderRadius: 8, marginBottom: 8 },
+  favoriteButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  favoriteIcon: { fontSize: 24 },
   productInfo: { marginBottom: 8 },
   productName: { fontSize: 14, fontWeight: "600", color: "#333" },
   productPrice: { fontSize: 14, color: "#007bff" },
