@@ -8,12 +8,14 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from "react-native";
 import { router } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCart, updateCartItem, removeCartItem, clearCart } from "../src/api/cart";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -75,23 +77,57 @@ export default function Cart() {
 
   if (!user) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.mutedText}>Vui lòng đăng nhập để xem giỏ hàng.</Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => router.push("/login?redirect=cart")}
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+        <LinearGradient
+          colors={['#4caf50', '#388e3c']}
+          style={styles.header}
         >
-          <Text style={styles.loginButtonText}>Đăng nhập</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Giỏ hàng</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🔒</Text>
+          <Text style={styles.emptyTitle}>Vui lòng đăng nhập</Text>
+          <Text style={styles.mutedText}>Đăng nhập để xem giỏ hàng và đặt mua sản phẩm</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => router.push("/login?redirect=cart")}
+          >
+            <Text style={styles.loginButtonText}>🔑 Đăng nhập ngay</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-        <Text style={styles.mutedText}>Đang tải giỏ hàng...</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+        <LinearGradient
+          colors={['#4caf50', '#388e3c']}
+          style={styles.header}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Giỏ hàng</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4caf50" />
+          <Text style={styles.mutedText}>Đang tải giỏ hàng...</Text>
+        </View>
       </View>
     );
   }
@@ -100,15 +136,26 @@ export default function Cart() {
 
   if (error || !items.length) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
-        <Text style={styles.mutedText}>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</Text>
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={() => router.push("/home")}
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+        <LinearGradient
+          colors={['#4caf50', '#388e3c']}
+          style={styles.header}
         >
-          <Text style={styles.continueButtonText}>Tiếp tục mua hàng</Text>
-        </TouchableOpacity>
+          <Text style={styles.headerTitle}>Giỏ hàng</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🛒</Text>
+          <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
+          <Text style={styles.mutedText}>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</Text>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={() => router.push("/home")}
+          >
+            <Text style={styles.continueButtonText}>🛍️ Tiếp tục mua hàng</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -120,17 +167,23 @@ export default function Cart() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>← Quay lại</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Giỏ hàng</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+      <LinearGradient
+        colors={['#4caf50', '#388e3c']}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Giỏ hàng của tôi</Text>
+        <View style={{ width: 40 }} />
+      </LinearGradient>
       
-      <ScrollView style={styles.scrollContent}>
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sản phẩm ({items.length})</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🛍️ Sản phẩm đã chọn</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{items.length}</Text>
+            </View>
+          </View>
           {items.map((item) => (
             <View key={item.id} style={styles.cartItem}>
               <Image
@@ -142,7 +195,9 @@ export default function Cart() {
                   {item.product?.name || "Sản phẩm"}
                 </Text>
                 {item.product?.category?.name && (
-                  <Text style={styles.categoryText}>{item.product.category.name}</Text>
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{item.product.category.name}</Text>
+                  </View>
                 )}
                 <Text style={styles.itemPrice}>{formatVND(item.product?.price)}</Text>
                 <View style={styles.qtyRow}>
@@ -183,9 +238,21 @@ export default function Cart() {
           ))}
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.summarySection}>
+          <Text style={styles.summaryTitle}>📋 Tóm tắt đơn hàng</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Tổng sản phẩm:</Text>
+            <Text style={styles.summaryValue}>{items.length}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Tổng số lượng:</Text>
+            <Text style={styles.summaryValue}>
+              {items.reduce((sum, item) => sum + (item.quantity ?? 0), 0)}
+            </Text>
+          </View>
+          <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Tổng cộng</Text>
+            <Text style={styles.totalLabel}>Tổng thanh toán</Text>
             <Text style={styles.totalPrice}>{formatVND(totalPrice)}</Text>
           </View>
         </View>
@@ -207,14 +274,14 @@ export default function Cart() {
           disabled={clearCartMutation.isPending}
         >
           <Text style={styles.clearButtonText}>
-            {clearCartMutation.isPending ? "Đang xóa..." : "Xóa giỏ hàng"}
+            {clearCartMutation.isPending ? "⏳ Đang xóa..." : "🗑️ Xóa giỏ hàng"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.checkoutButton]}
           onPress={() => router.push("/checkout")}
         >
-          <Text style={styles.checkoutButtonText}>Thanh toán</Text>
+          <Text style={styles.checkoutButtonText}>💳 Thanh toán</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -224,89 +291,106 @@ export default function Cart() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    padding: 24,
+    padding: 30,
+  },
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
     color: "#333",
     marginBottom: 12,
   },
   header: {
-    padding: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
+    justifyContent: "space-between",
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007bff",
-    fontWeight: "600",
+  backIcon: {
+    fontSize: 24,
+    color: "#fff",
+    fontWeight: "700",
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.5,
   },
   scrollContent: {
     flex: 1,
   },
   section: {
-    padding: 16,
+    margin: 16,
     backgroundColor: "#fff",
-    marginTop: 8,
-    marginHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: 16,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
+    fontWeight: "800",
+    color: "#1a1a1a",
+  },
+  badge: {
+    backgroundColor: "#4caf50",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 16,
   },
   cartItem: {
     flexDirection: "row",
     alignItems: "flex-start",
     padding: 12,
     backgroundColor: "#f8f9fa",
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#e9ecef",
   },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 90,
+    height: 90,
+    borderRadius: 12,
     marginRight: 12,
     backgroundColor: "#e9ecef",
   },
@@ -316,20 +400,28 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 6,
     lineHeight: 22,
   },
-  categoryText: {
-    fontSize: 13,
-    color: "#6c757d",
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e3f2fd",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     marginBottom: 6,
   },
-  itemPrice: {
-    fontSize: 16,
-    color: "#007bff",
+  categoryText: {
+    fontSize: 12,
+    color: "#1a73e8",
     fontWeight: "600",
+  },
+  itemPrice: {
+    fontSize: 17,
+    color: "#4caf50",
+    fontWeight: "800",
     marginBottom: 8,
   },
   qtyRow: {
@@ -337,31 +429,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   qtyButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#4caf50",
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   disabledQtyButton: {
     backgroundColor: "#e9ecef",
     borderColor: "#ced4da",
-    opacity: 0.6,
+    opacity: 0.5,
+    shadowOpacity: 0,
   },
   qtyButtonText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#4caf50",
   },
   qtyText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginHorizontal: 16,
-    minWidth: 32,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginHorizontal: 14,
+    minWidth: 28,
     textAlign: "center",
   },
   deleteButton: {
@@ -372,63 +470,102 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 24,
   },
+  summarySection: {
+    margin: 16,
+    marginTop: 0,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  summaryLabel: {
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
+  },
+  summaryValue: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontWeight: "600",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e9ecef",
+    marginVertical: 12,
+  },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
+    paddingTop: 12,
   },
   totalLabel: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: "800",
+    color: "#1a1a1a",
   },
   totalPrice: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#007bff",
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#4caf50",
   },
   footer: {
     flexDirection: "row",
     padding: 16,
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "#e9ecef",
     gap: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 5,
   },
   clearButton: {
     flex: 1,
-    padding: 14,
-    backgroundColor: "#dc3545",
-    borderRadius: 8,
+    padding: 16,
+    backgroundColor: "#ff6b6b",
+    borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#dc3545",
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#ff6b6b",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   clearButtonText: {
     color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
+    fontWeight: "700",
+    fontSize: 15,
   },
   checkoutButton: {
-    flex: 1,
-    padding: 14,
-    backgroundColor: "#28a745",
-    borderRadius: 8,
+    flex: 1.5,
+    padding: 16,
+    backgroundColor: "#4caf50",
+    borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#28a745",
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   checkoutButtonText: {
     color: "#fff",
@@ -436,51 +573,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   disabledButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#9e9e9e",
     shadowOpacity: 0,
     elevation: 0,
   },
   loginButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
+    backgroundColor: "#4caf50",
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: 16,
-    shadowColor: "#007bff",
-    shadowOffset: { width: 0, height: 2 },
+    marginTop: 20,
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
   },
   continueButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
+    backgroundColor: "#4caf50",
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: 16,
-    shadowColor: "#007bff",
-    shadowOffset: { width: 0, height: 2 },
+    marginTop: 20,
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   continueButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
   },
   mutedText: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#666",
     textAlign: "center",
     marginVertical: 8,
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });
