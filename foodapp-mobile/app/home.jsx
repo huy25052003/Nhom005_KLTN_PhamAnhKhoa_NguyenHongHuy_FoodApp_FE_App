@@ -133,9 +133,9 @@ export default function Home() {
           {me?.username || (typeof user === "string" ? `Xin chào, ${user}!` : user?.username ? `Xin chào, ${user.username}!` : "Xin chào, Khách!")}
         </Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity onPress={handleShippingInfo} style={styles.shippingButton}>
+          {/* <TouchableOpacity onPress={handleShippingInfo} style={styles.shippingButton}>
             <Text style={styles.shippingText}>Thông tin giao hàng</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
