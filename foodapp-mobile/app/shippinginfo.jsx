@@ -9,7 +9,6 @@ export default function ShippingInfo() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { redirect } = useLocalSearchParams();
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
