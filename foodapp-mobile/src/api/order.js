@@ -20,8 +20,13 @@ export async function getOrder(id) {
   return res.data;
 }
 
-export async function placeOrder(items) {
-  const res = await api.post("api/orders", items);
+export async function placeOrder(payload) {
+  // payload có thể là:
+  // - Array items (cũ)
+  // - Object { items, shippingInfo, paymentMethod, promoCode } (mới - giống web)
+  const res = await api.post("api/orders", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
   return res.data;
 }
 

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCart, updateCartItem, removeCartItem, clearCart, checkout } from "../src/api/cart";
+import { getCart, updateCartItem, removeCartItem, clearCart } from "../src/api/cart";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 
@@ -27,6 +27,7 @@ export default function Cart() {
   const { data: cart, isLoading, error } = useQuery({
     queryKey: ["cart"],
     queryFn: getCart,
+    enabled: !!user,
     onError: (err) => {
       console.error("Error fetching cart:", err);
       Alert.alert("Lỗi", "Không tải được giỏ hàng. Vui lòng thử lại.");
@@ -59,18 +60,6 @@ export default function Cart() {
       Alert.alert("Thành công", "Đã xóa toàn bộ giỏ hàng");
     },
     onError: (e) => Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Xóa giỏ hàng thất bại"),
-  });
-
-  const checkoutMutation = useMutation({
-    mutationFn: checkout,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      setCount(0);
-      Alert.alert("Thành công", `Đơn hàng #${data.orderId || "N/A"} đã được tạo`, [
-        { text: "OK", onPress: () => router.push("/home") },
-      ]);
-    },
-    onError: (e) => Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Thanh toán thất bại"),
   });
 
   const updateCartCount = async () => {
@@ -107,97 +96,128 @@ export default function Cart() {
     );
   }
 
-  if (error || !cart || !cart.items?.length) {
+  const items = cart?.items || cart?.cartItems || [];
+
+  if (error || !items.length) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.mutedText}>Giỏ hàng trống</Text>
+        <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
+        <Text style={styles.mutedText}>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</Text>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.continueButton}
           onPress={() => router.push("/home")}
         >
-          <Text style={styles.backButtonText}>Quay lại trang chủ</Text>
+          <Text style={styles.continueButtonText}>Tiếp tục mua hàng</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const totalPrice = cart.items.reduce(
+  const totalPrice = items.reduce(
     (sum, item) => sum + (item.product?.price ?? 0) * (item.quantity ?? 0),
     0
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Quay lại</Text>
+          <Text style={styles.backButtonText}>← Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Giỏ hàng</Text>
-        <View style={{ width: 60 }} />
+        <View style={{ width: 70 }} />
       </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Sản phẩm trong giỏ</Text>
-        {cart.items.map((item) => (
-          <View key={item.id} style={styles.cartItem}>
-            <Image
-              source={{ uri: item.product?.imageUrl || "https://via.placeholder.com/80" }}
-              style={styles.itemImage}
-            />
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.product?.name || "Sản phẩm"}</Text>
-              <Text style={styles.itemPrice}>{formatVND(item.product?.price)}</Text>
-              <View style={styles.qtyRow}>
-                <TouchableOpacity
-                  style={[styles.qtyButton, updateCartMutation.isPending && styles.disabledButton]}
-                  onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
-                  disabled={updateCartMutation.isPending}
-                >
-                  <Text style={styles.qtyButtonText}>-</Text>
-                </TouchableOpacity>
-                <Text style={styles.qtyText}>{item.quantity}</Text>
-                <TouchableOpacity
-                  style={[styles.qtyButton, updateCartMutation.isPending && styles.disabledButton]}
-                  onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
-                  disabled={updateCartMutation.isPending}
-                >
-                  <Text style={styles.qtyButtonText}>+</Text>
-                </TouchableOpacity>
+      
+      <ScrollView style={styles.scrollContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sản phẩm ({items.length})</Text>
+          {items.map((item) => (
+            <View key={item.id} style={styles.cartItem}>
+              <Image
+                source={{ uri: item.product?.imageUrl || "https://via.placeholder.com/80" }}
+                style={styles.itemImage}
+              />
+              <View style={styles.itemDetails}>
+                <Text style={styles.itemName} numberOfLines={2}>
+                  {item.product?.name || "Sản phẩm"}
+                </Text>
+                {item.product?.category?.name && (
+                  <Text style={styles.categoryText}>{item.product.category.name}</Text>
+                )}
+                <Text style={styles.itemPrice}>{formatVND(item.product?.price)}</Text>
+                <View style={styles.qtyRow}>
+                  <TouchableOpacity
+                    style={[styles.qtyButton, (updateCartMutation.isPending || item.quantity <= 1) && styles.disabledQtyButton]}
+                    onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
+                    disabled={updateCartMutation.isPending || item.quantity <= 1}
+                  >
+                    <Text style={styles.qtyButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.qtyText}>{item.quantity}</Text>
+                  <TouchableOpacity
+                    style={[styles.qtyButton, updateCartMutation.isPending && styles.disabledQtyButton]}
+                    onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
+                    disabled={updateCartMutation.isPending}
+                  >
+                    <Text style={styles.qtyButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+              <TouchableOpacity
+                style={[styles.deleteButton, removeCartItemMutation.isPending && styles.disabledButton]}
+                onPress={() => {
+                  Alert.alert(
+                    "Xác nhận",
+                    "Bạn có chắc muốn xóa sản phẩm này?",
+                    [
+                      { text: "Hủy", style: "cancel" },
+                      { text: "Xóa", style: "destructive", onPress: () => removeCartItemMutation.mutate(item.id) }
+                    ]
+                  );
+                }}
+                disabled={removeCartItemMutation.isPending}
+              >
+                <Text style={styles.deleteButtonText}>🗑️</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[styles.deleteButton, removeCartItemMutation.isPending && styles.disabledButton]}
-              onPress={() => removeCartItemMutation.mutate(item.id)}
-              disabled={removeCartItemMutation.isPending}
-            >
-              <Text style={styles.deleteButtonText}>Xóa</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.totalText}>Tổng cộng: {formatVND(totalPrice)}</Text>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.clearButton, clearCartMutation.isPending && styles.disabledButton]}
-            onPress={() => clearCartMutation.mutate()}
-            disabled={clearCartMutation.isPending}
-          >
-            <Text style={styles.clearButtonText}>
-              {clearCartMutation.isPending ? "Đang xóa..." : "Xóa giỏ hàng"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.checkoutButton, checkoutMutation.isPending && styles.disabledButton]}
-            onPress={() => router.push("/checkout")}
-            disabled={checkoutMutation.isPending}
-          >
-            <Text style={styles.checkoutButtonText}>
-              Thanh toán
-            </Text>
-          </TouchableOpacity>
+          ))}
         </View>
+
+        <View style={styles.section}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Tổng cộng</Text>
+            <Text style={styles.totalPrice}>{formatVND(totalPrice)}</Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.clearButton, clearCartMutation.isPending && styles.disabledButton]}
+          onPress={() => {
+            Alert.alert(
+              "Xác nhận",
+              "Bạn có chắc muốn xóa toàn bộ giỏ hàng?",
+              [
+                { text: "Hủy", style: "cancel" },
+                { text: "Xóa", style: "destructive", onPress: () => clearCartMutation.mutate() }
+              ]
+            );
+          }}
+          disabled={clearCartMutation.isPending}
+        >
+          <Text style={styles.clearButtonText}>
+            {clearCartMutation.isPending ? "Đang xóa..." : "Xóa giỏ hàng"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.checkoutButton]}
+          onPress={() => router.push("/checkout")}
+        >
+          <Text style={styles.checkoutButtonText}>Thanh toán</Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -217,6 +237,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f5f5",
+    padding: 24,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
   },
   header: {
     padding: 16,
@@ -226,6 +253,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   headerTitle: {
     fontSize: 20,
@@ -238,11 +270,16 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     color: "#007bff",
+    fontWeight: "600",
+  },
+  scrollContent: {
+    flex: 1,
   },
   section: {
     padding: 16,
     backgroundColor: "#fff",
-    marginBottom: 8,
+    marginTop: 8,
+    marginHorizontal: 8,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -254,36 +291,45 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#333",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cartItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     padding: 12,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#f8f9fa",
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: "#e9ecef",
   },
   itemImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
     marginRight: 12,
+    backgroundColor: "#e9ecef",
   },
   itemDetails: {
     flex: 1,
+    justifyContent: "space-between",
   },
   itemName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
     marginBottom: 4,
+    lineHeight: 22,
+  },
+  categoryText: {
+    fontSize: 13,
+    color: "#6c757d",
+    marginBottom: 6,
   },
   itemPrice: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#007bff",
+    fontWeight: "600",
     marginBottom: 8,
   },
   qtyRow: {
@@ -291,14 +337,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   qtyButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#dee2e6",
+  },
+  disabledQtyButton: {
+    backgroundColor: "#e9ecef",
+    borderColor: "#ced4da",
+    opacity: 0.6,
   },
   qtyButtonText: {
     fontSize: 20,
@@ -310,38 +361,57 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
     marginHorizontal: 16,
-    width: 40,
+    minWidth: 32,
     textAlign: "center",
   },
   deleteButton: {
     padding: 8,
-    backgroundColor: "#dc3545",
-    borderRadius: 8,
+    justifyContent: "center",
     alignItems: "center",
   },
   deleteButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
+    fontSize: 24,
   },
-  totalText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 12,
-    textAlign: "right",
-  },
-  buttonRow: {
+  totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  totalLabel: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+  },
+  totalPrice: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#007bff",
+  },
+  footer: {
+    flexDirection: "row",
+    padding: 16,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   clearButton: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     backgroundColor: "#dc3545",
     borderRadius: 8,
     alignItems: "center",
-    marginRight: 8,
+    shadowColor: "#dc3545",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   clearButtonText: {
     color: "#fff",
@@ -350,35 +420,67 @@ const styles = StyleSheet.create({
   },
   checkoutButton: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     backgroundColor: "#28a745",
     borderRadius: 8,
     alignItems: "center",
+    shadowColor: "#28a745",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   checkoutButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
   },
   disabledButton: {
     backgroundColor: "#6c757d",
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginButton: {
-    padding: 12,
     backgroundColor: "#007bff",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 16,
+    shadowColor: "#007bff",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   loginButtonText: {
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
   },
+  continueButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+    shadowColor: "#007bff",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  continueButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
   mutedText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#666",
     textAlign: "center",
-    marginVertical: 12,
+    marginVertical: 8,
+    lineHeight: 22,
   },
 });
