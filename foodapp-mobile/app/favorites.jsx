@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "expo-router";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { addToCart, getCart } from "../src/api/cart";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -76,182 +78,226 @@ export default function Favorites() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#ff6b6b" />
+      <LinearGradient
+        colors={['#ff6b6b', '#ee5a6f']}
+        style={styles.header}
+      >
+    
         <Text style={styles.title}>Sản phẩm yêu thích</Text>
-      </View>
+        <View style={{ width: 40 }} />
+      </LinearGradient>
 
-      {!favorites.length ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Chưa có sản phẩm yêu thích.</Text>
-          <TouchableOpacity
-            style={styles.homeButton}
-            onPress={() => navigation.navigate("home")}
-          >
-            <Text style={styles.homeButtonText}>Về trang chủ</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.grid}>
-          {favorites.map((p) => (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {!favorites.length ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>💝</Text>
+            <Text style={styles.emptyTitle}>Chưa có món yêu thích</Text>
+            <Text style={styles.emptyText}>
+              Hãy thêm các món ăn bạn yêu thích để dễ dàng tìm lại sau nhé!
+            </Text>
             <TouchableOpacity
-              key={p.id}
-              style={styles.productCard}
-              onPress={() => navigation.navigate("product", { id: p.id })}
+              style={styles.homeButton}
+              onPress={() => navigation.navigate("home")}
             >
-              <Image
-                source={{ uri: p.imageUrl || "https://via.placeholder.com/150" }}
-                style={styles.productImage}
-              />
-              <TouchableOpacity
-                style={styles.favoriteButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleToggleFavorite(p.id);
-                }}
-              >
-                <Text style={styles.favoriteIcon}>❤️</Text>
-              </TouchableOpacity>
-              <View style={styles.productInfo}>
-                <Text style={styles.productName} numberOfLines={2}>
-                  {p.name}
-                </Text>
-                <Text style={styles.productPrice}>{formatVND(p.price)}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(p);
-                }}
-              >
-                <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
-              </TouchableOpacity>
+              <Text style={styles.homeButtonText}>Khám phá ngay</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {favorites.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.productCard}
+                onPress={() => navigation.navigate("product", { id: p.id })}
+              >
+                <Image
+                  source={{ uri: p.imageUrl || "https://via.placeholder.com/150" }}
+                  style={styles.productImage}
+                />
+                <TouchableOpacity
+                  style={styles.favoriteButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(p.id);
+                  }}
+                >
+                  <Text style={styles.favoriteIcon}>❤️</Text>
+                </TouchableOpacity>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName} numberOfLines={2}>
+                    {p.name}
+                  </Text>
+                  <Text style={styles.productPrice}>{formatVND(p.price)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart(p);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>🛒 Thêm vào giỏ</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
     color: "#666",
+    fontWeight: "600",
   },
   header: {
-    padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backIcon: {
+    fontSize: 24,
+    color: "#fff",
+    fontWeight: "700",
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.5,
   },
   emptyContainer: {
-    padding: 32,
+    marginTop: 80,
     alignItems: "center",
-    backgroundColor: "#fff",
-    margin: 16,
-    borderRadius: 8,
+    paddingHorizontal: 30,
+  },
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
   },
   emptyText: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 16,
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 30,
   },
   homeButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
+    backgroundColor: "#ff6b6b",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    shadowColor: "#ff6b6b",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   homeButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    padding: 12,
     justifyContent: "space-between",
-    padding: 16,
   },
   productCard: {
     width: "48%",
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    position: "relative",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   productImage: {
     width: "100%",
-    height: 160,
+    height: 150,
+    backgroundColor: "#f0f0f0",
   },
   favoriteButton: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(255,255,255,0.95)",
     borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+    width: 36,
+    height: 36,
     alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
   favoriteIcon: {
-    fontSize: 24,
+    fontSize: 18,
   },
   productInfo: {
     padding: 12,
   },
   productName: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 6,
     color: "#333",
-    marginBottom: 4,
+    lineHeight: 20,
   },
   productPrice: {
-    fontSize: 14,
-    color: "#007bff",
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#ff6b6b",
   },
   addButton: {
-    margin: 12,
-    marginTop: 0,
-    paddingVertical: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 6,
+    backgroundColor: "#4caf50",
+    padding: 12,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   addButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 14,
   },
 });
