@@ -15,6 +15,7 @@ import { useCart } from "../src/store/cart";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { addToCart, getCart } from "../src/api/cart";
 import { LinearGradient } from 'expo-linear-gradient';
+import { Heart, ShoppingCart, Home } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -92,7 +93,7 @@ export default function Favorites() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {!favorites.length ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>💝</Text>
+            <Heart color="#ff6b6b" size={80} strokeWidth={1.5} />
             <Text style={styles.emptyTitle}>Chưa có món yêu thích</Text>
             <Text style={styles.emptyText}>
               Hãy thêm các món ăn bạn yêu thích để dễ dàng tìm lại sau nhé!
@@ -101,6 +102,7 @@ export default function Favorites() {
               style={styles.homeButton}
               onPress={() => navigation.navigate("home")}
             >
+              <Home color="#fff" size={20} strokeWidth={2} />
               <Text style={styles.homeButtonText}>Khám phá ngay</Text>
             </TouchableOpacity>
           </View>
@@ -123,7 +125,7 @@ export default function Favorites() {
                     handleToggleFavorite(p.id);
                   }}
                 >
-                  <Text style={styles.favoriteIcon}>❤️</Text>
+                  <Heart color="#ff6b6b" fill="#ff6b6b" size={20} strokeWidth={2} />
                 </TouchableOpacity>
                 <View style={styles.productInfo}>
                   <Text style={styles.productName} numberOfLines={2}>
@@ -138,7 +140,8 @@ export default function Favorites() {
                     handleAddToCart(p);
                   }}
                 >
-                  <Text style={styles.addButtonText}>🛒 Thêm vào giỏ</Text>
+                  <ShoppingCart color="#fff" size={18} strokeWidth={2} />
+                  <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -198,15 +201,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 30,
   },
-  emptyIcon: {
-    fontSize: 80,
-    marginBottom: 20,
-  },
   emptyTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: "#333",
     marginBottom: 12,
+    marginTop: 20,
   },
   emptyText: {
     fontSize: 16,
@@ -216,10 +216,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   homeButton: {
+    flexDirection: "row",
     backgroundColor: "#ff6b6b",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     shadowColor: "#ff6b6b",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -270,9 +274,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  favoriteIcon: {
-    fontSize: 18,
-  },
   productInfo: {
     padding: 12,
   },
@@ -294,6 +295,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
+    gap: 8,
   },
   addButtonText: {
     color: "#fff",
