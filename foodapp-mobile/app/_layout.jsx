@@ -11,17 +11,83 @@ export default function RootLayout() {
       <View style={{ flex: 1 }}>
         <Stack initialRouteName="index">
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ title: "Đăng nhập", headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="home" options={{ headerShown: false }} />
-          <Stack.Screen name="cart" options={{ title: "Giỏ hàng" }} />
-          <Stack.Screen name="category" options={{ title: "Danh mục" }} />
-          <Stack.Screen name="product" options={{ title: "Sản phẩm" }} />
-          <Stack.Screen name="register" options={{ title: "Đăng ký" }} />
-          <Stack.Screen name="shippinginfo" options={{ title: "Thông tin giao hàng" }} />
-          <Stack.Screen name="checkout" options={{ title: "Thanh toán" }} />
-          <Stack.Screen name="order" options={{ title: "Đơn hàng" }} />
-          <Stack.Screen name="paymentresult" options={{ title: "Kết quả thanh toán" }} />
-          <Stack.Screen name="favorites" options={{ title: "Yêu thích"}} />
+          <Stack.Screen 
+            name="cart" 
+            options={{ 
+              title: "Giỏ hàng",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="category" 
+            options={{ 
+              title: "Danh mục",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="product" 
+            options={{ 
+              title: "Sản phẩm",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="register" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="shippinginfo" 
+            options={{ 
+              title: "Thông tin giao hàng",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="checkout" 
+            options={{ 
+              title: "Thanh toán",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="order" 
+            options={{ 
+              title: "Đơn hàng",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="paymentresult" 
+            options={{ 
+              title: "Kết quả thanh toán",
+              headerStyle: { backgroundColor: "#4caf50" },
+              headerTintColor: "#fff",
+              headerTitleStyle: { fontWeight: "700", fontSize: 18 }
+            }} 
+          />
+          <Stack.Screen 
+            name="favorites" 
+            options={{ 
+              headerShown: false
+            }} 
+          />
         </Stack>
         <ChatbotWidget />
       </View>

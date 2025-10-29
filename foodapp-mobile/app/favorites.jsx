@@ -15,7 +15,7 @@ import { useCart } from "../src/store/cart";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { addToCart, getCart } from "../src/api/cart";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, ShoppingCart, Home } from 'lucide-react-native';
+import { Heart, ShoppingCart, Home, ChevronLeft } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -85,7 +85,12 @@ export default function Favorites() {
         colors={['#ff6b6b', '#ee5a6f']}
         style={styles.header}
       >
-    
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
+        </TouchableOpacity>
         <Text style={styles.title}>Sản phẩm yêu thích</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
@@ -170,8 +175,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   header: {
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 20,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "800",
     color: "#fff",
     letterSpacing: 0.5,
