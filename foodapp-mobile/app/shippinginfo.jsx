@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyShipping, upsertMyShipping } from "../src/api/shipping";
 import { useAuth } from "../src/store/auth";
 import { LinearGradient } from 'expo-linear-gradient';
+import { MapPin, Phone, Home as HomeIcon, Save, Info } from 'lucide-react-native';
 
 export default function ShippingInfo() {
   const { token } = useAuth();
@@ -76,16 +77,16 @@ export default function ShippingInfo() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#2196f3" />
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
         <LinearGradient
-          colors={['#2196f3', '#1976d2']}
+          colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
           <Text style={styles.headerTitle}>Thông tin giao hàng</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196f3" />
+          <ActivityIndicator size="large" color="#4caf50" />
           <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
       </View>
@@ -94,9 +95,9 @@ export default function ShippingInfo() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#2196f3" />
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
       <LinearGradient
-        colors={['#2196f3', '#1976d2']}
+        colors={['#4caf50', '#388e3c']}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Thông tin giao hàng</Text>
@@ -109,7 +110,10 @@ export default function ShippingInfo() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>📍 Địa chỉ nhận hàng</Text>
+          <View style={styles.cardTitleRow}>
+            <MapPin color="#4caf50" size={24} strokeWidth={2} />
+            <Text style={styles.cardTitle}>Địa chỉ nhận hàng</Text>
+          </View>
           <Text style={styles.cardSubtitle}>
             Vui lòng cung cấp thông tin chính xác để chúng tôi giao hàng đến bạn
           </Text>
@@ -117,7 +121,10 @@ export default function ShippingInfo() {
 
         <View style={styles.formSection}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>📞 Số điện thoại <Text style={styles.required}>*</Text></Text>
+            <View style={styles.labelRow}>
+              <Phone color="#666" size={16} strokeWidth={2} />
+              <Text style={styles.label}>Số điện thoại <Text style={styles.required}>*</Text></Text>
+            </View>
             <TextInput
               value={form.phone}
               onChangeText={(value) => onChange("phone", value)}
@@ -129,7 +136,10 @@ export default function ShippingInfo() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>🏠 Địa chỉ cụ thể <Text style={styles.required}>*</Text></Text>
+            <View style={styles.labelRow}>
+              <HomeIcon color="#666" size={16} strokeWidth={2} />
+              <Text style={styles.label}>Địa chỉ cụ thể <Text style={styles.required}>*</Text></Text>
+            </View>
             <TextInput
               value={form.addressLine}
               onChangeText={(value) => onChange("addressLine", value)}
@@ -142,7 +152,10 @@ export default function ShippingInfo() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>🌆 Tỉnh/Thành phố</Text>
+            <View style={styles.labelRow}>
+              <MapPin color="#666" size={16} strokeWidth={2} />
+              <Text style={styles.label}>Tỉnh/Thành phố</Text>
+            </View>
             <TextInput
               value={form.city}
               onChangeText={(value) => onChange("city", value)}
@@ -160,7 +173,7 @@ export default function ShippingInfo() {
         )}
 
         <View style={styles.noteCard}>
-          <Text style={styles.noteIcon}>ℹ️</Text>
+          <Info color="#4caf50" size={20} strokeWidth={2} />
           <Text style={styles.noteText}>
             Thông tin này sẽ được sử dụng làm địa chỉ giao hàng mặc định khi bạn đặt hàng.
           </Text>
@@ -172,15 +185,17 @@ export default function ShippingInfo() {
           onPress={() => router.push("/")}
           style={styles.homeButton}
         >
-          <Text style={styles.homeButtonText}>🏠 Trang chủ</Text>
+          <HomeIcon color="#4caf50" size={18} strokeWidth={2} />
+          <Text style={styles.homeButtonText}>Trang chủ</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onSave}
           disabled={saving}
           style={[styles.saveButton, saving && styles.disabledButton]}
         >
+          <Save color="#fff" size={18} strokeWidth={2} />
           <Text style={styles.saveButtonText}>
-            {saving ? "⏳ Đang lưu..." : "💾 Lưu thông tin"}
+            {saving ? "Đang lưu..." : "Lưu thông tin"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -249,11 +264,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
   cardTitle: {
     fontSize: 20,
     fontWeight: "800",
     color: "#1a1a1a",
-    marginBottom: 8,
   },
   cardSubtitle: {
     fontSize: 14,
@@ -274,11 +294,16 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: 20,
   },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
   label: {
     fontSize: 15,
     fontWeight: "700",
     color: "#1a1a1a",
-    marginBottom: 8,
   },
   required: {
     color: "#f44336",
@@ -322,21 +347,18 @@ const styles = StyleSheet.create({
   },
   noteCard: {
     flexDirection: "row",
-    backgroundColor: "#e3f2fd",
+    backgroundColor: "#e8f5e9",
     borderRadius: 12,
     padding: 16,
     alignItems: "flex-start",
+    gap: 12,
     borderWidth: 1,
-    borderColor: "#90caf9",
-  },
-  noteIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    borderColor: "#a5d6a7",
   },
   noteText: {
     flex: 1,
     fontSize: 13,
-    color: "#1976d2",
+    color: "#2e7d32",
     lineHeight: 20,
     fontWeight: "500",
   },
@@ -359,25 +381,31 @@ const styles = StyleSheet.create({
   },
   homeButton: {
     flex: 1,
+    flexDirection: "row",
     padding: 16,
     backgroundColor: "#f8f9fa",
     borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     borderWidth: 1.5,
-    borderColor: "#2196f3",
+    borderColor: "#4caf50",
   },
   homeButtonText: {
-    color: "#2196f3",
+    color: "#4caf50",
     fontWeight: "700",
     fontSize: 15,
   },
   saveButton: {
     flex: 2,
+    flexDirection: "row",
     padding: 16,
-    backgroundColor: "#2196f3",
+    backgroundColor: "#4caf50",
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#2196f3",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
