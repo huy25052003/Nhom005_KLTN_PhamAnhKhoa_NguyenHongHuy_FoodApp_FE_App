@@ -8,6 +8,7 @@ import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { LinearGradient } from 'expo-linear-gradient';
+import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon } from 'lucide-react-native';
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -109,9 +110,12 @@ export default function Home() {
           handleToggleFavorite(product.id);
         }}
       >
-        <Text style={styles.favoriteIcon}>
-          {isFavorite(product.id) ? "❤️" : "🤍"}
-        </Text>
+        <Heart 
+          color={isFavorite(product.id) ? "#ff5252" : "#9e9e9e"} 
+          fill={isFavorite(product.id) ? "#ff5252" : "transparent"}
+          size={22} 
+          strokeWidth={2} 
+        />
       </TouchableOpacity>
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{product.name}</Text>
@@ -153,7 +157,7 @@ export default function Home() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#4caf50" />
       </View>
     );
   }
@@ -162,11 +166,11 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a73e8" />
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Gradient */}
         <LinearGradient
-          colors={['#1a73e8', '#0d47a1']}
+          colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
           <View style={styles.headerContent}>
@@ -183,13 +187,13 @@ export default function Home() {
                     onPress={() => navigation.navigate("favorites")} 
                     style={styles.headerIconButton}
                   >
-                    <Text style={styles.headerIcon}>❤️</Text>
+                    <Heart color="#fff" size={24} strokeWidth={2} />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={handleLogout} 
                     style={styles.headerIconButton}
                   >
-                    <Text style={styles.headerIcon}>🚪</Text>
+                    <LogOut color="#fff" size={24} strokeWidth={2} />
                   </TouchableOpacity>
                 </>
               ) : (
@@ -204,7 +208,7 @@ export default function Home() {
                 onPress={() => navigation.navigate("cart")} 
                 style={styles.headerIconButton}
               >
-                <Text style={styles.headerIcon}>🛒</Text>
+                <ShoppingCart color="#fff" size={24} strokeWidth={2} />
               </TouchableOpacity>
             </View>
           </View>
@@ -225,20 +229,21 @@ export default function Home() {
                 style={styles.primaryButton}
                 onPress={() => navigation.navigate("order")}
               >
-                <Text style={styles.buttonText}>🍽️ Đặt ngay</Text>
+                <Utensils color="#fff" size={20} strokeWidth={2} />
+                <Text style={styles.buttonText}>Đặt ngay</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.heroFeatures}>
               <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🚚</Text>
+                <Truck color="#4caf50" size={24} strokeWidth={2} />
                 <Text style={styles.featureText}>Giao tận nơi</Text>
               </View>
               <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🥗</Text>
+                <Salad color="#4caf50" size={24} strokeWidth={2} />
                 <Text style={styles.featureText}>100+ món</Text>
               </View>
               <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>💪</Text>
+                <Dumbbell color="#4caf50" size={24} strokeWidth={2} />
                 <Text style={styles.featureText}>Eat clean</Text>
               </View>
             </View>
@@ -380,7 +385,7 @@ const styles = StyleSheet.create({
   headerLoginText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#1a73e8",
+    color: "#4caf50",
   },
   
   // Hero Section
@@ -412,12 +417,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   primaryButton: {
+    flexDirection: "row",
     paddingVertical: 16,
     paddingHorizontal: 32,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#4caf50",
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#1a73e8",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -475,11 +483,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#4caf50",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#1a73e8",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -521,10 +529,10 @@ const styles = StyleSheet.create({
   },
   planName: { fontSize: 15, fontWeight: "700", color: "#1a1a1a", marginBottom: 6 },
   planDesc: { fontSize: 13, color: "#666", marginBottom: 12 },
-  planPrice: { fontSize: 16, color: "#1a73e8", marginBottom: 12, fontWeight: "700" },
+  planPrice: { fontSize: 16, color: "#4caf50", marginBottom: 12, fontWeight: "700" },
   planButton: {
     padding: 12,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#4caf50",
     borderRadius: 10,
     alignItems: "center",
   },
@@ -591,13 +599,13 @@ const styles = StyleSheet.create({
   },
   productPrice: {
     fontSize: 15,
-    color: "#1a73e8",
+    color: "#4caf50",
     fontWeight: "700",
   },
   cardActions: { padding: 12, paddingTop: 0 },
   actionButton: {
     paddingVertical: 10,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#4caf50",
     borderRadius: 10,
     alignItems: "center",
   },
@@ -640,11 +648,11 @@ const styles = StyleSheet.create({
   // CTA Button
   ctaButton: {
     paddingVertical: 16,
-    backgroundColor: "#1a73e8",
+    backgroundColor: "#4caf50",
     borderRadius: 12,
     alignItems: "center",
     marginTop: 8,
-    shadowColor: "#1a73e8",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
