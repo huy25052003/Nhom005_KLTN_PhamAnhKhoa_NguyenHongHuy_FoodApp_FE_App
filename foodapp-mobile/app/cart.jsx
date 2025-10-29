@@ -16,6 +16,7 @@ import { getCart, updateCartItem, removeCartItem, clearCart } from "../src/api/c
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { LinearGradient } from 'expo-linear-gradient';
+import { ShoppingCart, Lock, Trash2, ChevronLeft, Minus, Plus, CreditCard } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -87,20 +88,21 @@ export default function Cart() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Giỏ hàng</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🔒</Text>
+          <Lock color="#999" size={64} strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>Vui lòng đăng nhập</Text>
           <Text style={styles.mutedText}>Đăng nhập để xem giỏ hàng và đặt mua sản phẩm</Text>
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() => router.push("/login?redirect=cart")}
           >
-            <Text style={styles.loginButtonText}>🔑 Đăng nhập ngay</Text>
+            <Lock color="#fff" size={18} strokeWidth={2} />
+            <Text style={styles.loginButtonText}>Đăng nhập ngay</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -119,7 +121,7 @@ export default function Cart() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Giỏ hàng</Text>
           <View style={{ width: 40 }} />
@@ -146,14 +148,15 @@ export default function Cart() {
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🛒</Text>
+          <ShoppingCart color="#999" size={64} strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
           <Text style={styles.mutedText}>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</Text>
           <TouchableOpacity
             style={styles.continueButton}
             onPress={() => router.push("/home")}
           >
-            <Text style={styles.continueButtonText}>🛍️ Tiếp tục mua hàng</Text>
+            <ShoppingCart color="#fff" size={18} strokeWidth={2} />
+            <Text style={styles.continueButtonText}>Tiếp tục mua hàng</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -179,7 +182,10 @@ export default function Cart() {
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🛍️ Sản phẩm đã chọn</Text>
+            <View style={styles.sectionTitleRow}>
+              <ShoppingCart color="#1a1a1a" size={20} strokeWidth={2.5} />
+              <Text style={styles.sectionTitle}>Sản phẩm đã chọn</Text>
+            </View>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{items.length}</Text>
             </View>
@@ -206,7 +212,7 @@ export default function Cart() {
                     onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
                     disabled={updateCartMutation.isPending || item.quantity <= 1}
                   >
-                    <Text style={styles.qtyButtonText}>−</Text>
+                    <Minus color="#4caf50" size={16} strokeWidth={2.5} />
                   </TouchableOpacity>
                   <Text style={styles.qtyText}>{item.quantity}</Text>
                   <TouchableOpacity
@@ -214,7 +220,7 @@ export default function Cart() {
                     onPress={() => updateCartMutation.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                     disabled={updateCartMutation.isPending}
                   >
-                    <Text style={styles.qtyButtonText}>+</Text>
+                    <Plus color="#4caf50" size={16} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -232,14 +238,14 @@ export default function Cart() {
                 }}
                 disabled={removeCartItemMutation.isPending}
               >
-                <Text style={styles.deleteButtonText}>🗑️</Text>
+                <Trash2 color="#ff6b6b" size={20} strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
         </View>
 
         <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>📋 Tóm tắt đơn hàng</Text>
+          <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tổng sản phẩm:</Text>
             <Text style={styles.summaryValue}>{items.length}</Text>
@@ -273,15 +279,17 @@ export default function Cart() {
           }}
           disabled={clearCartMutation.isPending}
         >
+          <Trash2 color="#fff" size={18} strokeWidth={2} />
           <Text style={styles.clearButtonText}>
-            {clearCartMutation.isPending ? "⏳ Đang xóa..." : "🗑️ Xóa giỏ hàng"}
+            {clearCartMutation.isPending ? "Đang xóa..." : "Xóa giỏ hàng"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.checkoutButton]}
           onPress={() => router.push("/checkout")}
         >
-          <Text style={styles.checkoutButtonText}>💳 Thanh toán</Text>
+          <CreditCard color="#fff" size={18} strokeWidth={2} />
+          <Text style={styles.checkoutButtonText}>Thanh toán</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -303,16 +311,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 30,
-  },
-  emptyIcon: {
-    fontSize: 80,
-    marginBottom: 20,
+    gap: 12,
   },
   emptyTitle: {
     fontSize: 24,
     fontWeight: "800",
     color: "#333",
-    marginBottom: 12,
+    marginTop: 16,
   },
   header: {
     paddingTop: 10,
@@ -329,11 +334,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "700",
   },
   headerTitle: {
     fontSize: 22,
@@ -360,6 +360,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -449,11 +454,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     shadowOpacity: 0,
   },
-  qtyButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#4caf50",
-  },
   qtyText: {
     fontSize: 16,
     fontWeight: "700",
@@ -466,9 +466,6 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  deleteButtonText: {
-    fontSize: 24,
   },
   summarySection: {
     margin: 16,
@@ -540,10 +537,13 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     padding: 16,
     backgroundColor: "#ff6b6b",
     borderRadius: 12,
-    alignItems: "center",
     shadowColor: "#ff6b6b",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -557,10 +557,13 @@ const styles = StyleSheet.create({
   },
   checkoutButton: {
     flex: 1.5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     padding: 16,
     backgroundColor: "#4caf50",
     borderRadius: 12,
-    alignItems: "center",
     shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -578,11 +581,14 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   loginButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     backgroundColor: "#4caf50",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
-    alignItems: "center",
     marginTop: 20,
     shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
@@ -596,11 +602,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   continueButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     backgroundColor: "#4caf50",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
-    alignItems: "center",
     marginTop: 20,
     shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
