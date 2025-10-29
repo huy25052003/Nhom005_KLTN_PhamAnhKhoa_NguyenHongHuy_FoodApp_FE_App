@@ -11,8 +11,10 @@ import {
   Platform,
   ActivityIndicator
 } from "react-native";
+import { usePathname } from "expo-router";
 
 export default function ChatbotWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -120,6 +122,14 @@ export default function ChatbotWidget() {
       }, 100);
     }
   }, [isOpen, messages]);
+
+  // Ẩn chatbot ở trang login và register
+  const hiddenRoutes = ['/login', '/register', '/index'];
+  const shouldHide = hiddenRoutes.includes(pathname);
+
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <>
