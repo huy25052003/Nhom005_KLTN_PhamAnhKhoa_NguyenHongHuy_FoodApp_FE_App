@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 40,
     paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: "row",
