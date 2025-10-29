@@ -14,10 +14,24 @@ import { useQuery } from "@tanstack/react-query";
 import { getCart, clearCart } from "../src/api/cart";
 import { getMyShipping } from "../src/api/shipping";
 import { placeOrder } from "../src/api/order";
-import { createPaymentLink } from "../src/api/payment";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { LinearGradient } from 'expo-linear-gradient';
+import { 
+  ShoppingCart, 
+  MapPin, 
+  Wallet, 
+  Lock, 
+  AlertCircle,
+  Edit,
+  Phone,
+  Home,
+  MapPinned,
+  FileText,
+  ChevronLeft,
+  Check,
+  Loader
+} from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -26,9 +40,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const { setCount } = useCart();
   
-  const [method, setMethod] = useState("COD");
   const [placing, setPlacing] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
 
   // Lấy thông tin giỏ hàng
   const { data: cart, isLoading: cartLoading, error: cartError, refetch: refetchCart } = useQuery({
@@ -43,13 +55,6 @@ export default function Checkout() {
     queryFn: getMyShipping,
     enabled: !!user,
   });
-
-  // Kiểm tra method từ params
-  useEffect(() => {
-    const m = (params?.method || "").toUpperCase();
-    if (m === "PAYOS") setMethod("PAYOS");
-    if (m === "COD") setMethod("COD");
-  }, [params]);
 
   const items = cart?.items || cart?.cartItems || [];
   const totalPrice = items.reduce(
@@ -99,8 +104,7 @@ export default function Checkout() {
       const requestPayload = {
         items: orderItemsPayload,
         shippingInfo: shippingInfoPayload,
-        paymentMethod: method,
-        promoCode: promoCode.trim() || null
+        paymentMethod: "COD"
       };
 
       console.log("Đang tạo đơn hàng với payload:", requestPayload);
@@ -111,55 +115,25 @@ export default function Checkout() {
         throw new Error("Không tạo được đơn hàng.");
       }
 
-      // Kiểm tra paymentMethod (so sánh không phân biệt hoa thường)
-      const orderPaymentMethod = (order.paymentMethod || "").toUpperCase();
-      const selectedMethod = method.toUpperCase();
-
-      if (selectedMethod === "COD" || orderPaymentMethod === "COD") {
-        Alert.alert(
-          "Thành công",
-          `Đặt hàng thành công! Mã đơn: ${order.id}\nBạn sẽ thanh toán khi nhận hàng.`,
-          [
-            {
-              text: "OK",
-              onPress: async () => {
-                try {
-                  await clearCart();
-                  setCount(0);
-                } catch (e) {
-                  console.warn("Không thể clear cart:", e);
-                }
-                router.replace("/home");
-              },
+      // Đặt hàng thành công với COD
+      Alert.alert(
+        "Thành công",
+        `Đặt hàng thành công! Mã đơn: ${order.id}\nBạn sẽ thanh toán khi nhận hàng.`,
+        [
+          {
+            text: "OK",
+            onPress: async () => {
+              try {
+                await clearCart();
+                setCount(0);
+              } catch (e) {
+                console.warn("Không thể clear cart:", e);
+              }
+              router.replace("/home");
             },
-          ]
-        );
-        return;
-      }
-
-      // PayOS
-      if (selectedMethod === "PAYOS" || orderPaymentMethod === "PAYOS") {
-        console.log("Đang tạo payment link cho đơn:", order.id);
-        const paymentUrl = await createPaymentLink(order.id);
-        console.log("Payment URL nhận được:", paymentUrl);
-
-        if (!paymentUrl) {
-          throw new Error("Không nhận được payment URL từ PayOS.");
-        }
-
-        // Chuyển đến trang thanh toán với orderId và paymentUrl
-        router.replace({
-          pathname: "/paymentresult",
-          params: {
-            orderId: String(order.id),
-            paymentUrl: paymentUrl,
           },
-        });
-        return;
-      }
-
-      // Trường hợp không xác định được phương thức
-      throw new Error("Phương thức thanh toán không hợp lệ.");
+        ]
+      );
 
     } catch (error) {
       console.error("Lỗi đặt hàng:", error);
@@ -175,29 +149,30 @@ export default function Checkout() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#ff9800" />
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
         <LinearGradient
-          colors={['#ff9800', '#f57c00']}
+          colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thanh toán</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🔒</Text>
+          <Lock color="#999" size={64} strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>Vui lòng đăng nhập</Text>
           <Text style={styles.mutedText}>Đăng nhập để thanh toán đơn hàng</Text>
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() => router.push("/login?redirect=checkout")}
           >
-            <Text style={styles.loginButtonText}>🔑 Đăng nhập ngay</Text>
+            <Lock color="#fff" size={18} strokeWidth={2} />
+            <Text style={styles.loginButtonText}>Đăng nhập ngay</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -207,22 +182,22 @@ export default function Checkout() {
   if (cartLoading || shippingLoading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#ff9800" />
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
         <LinearGradient
-          colors={['#ff9800', '#f57c00']}
+          colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thanh toán</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ff9800" />
+          <ActivityIndicator size="large" color="#4caf50" />
           <Text style={styles.mutedText}>Đang tải thông tin...</Text>
         </View>
       </View>
@@ -232,29 +207,30 @@ export default function Checkout() {
   if (cartError || !items.length) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#ff9800" />
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
         <LinearGradient
-          colors={['#ff9800', '#f57c00']}
+          colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thanh toán</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🛒</Text>
+          <ShoppingCart color="#999" size={64} strokeWidth={1.5} />
           <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
           <Text style={styles.mutedText}>Vui lòng thêm sản phẩm vào giỏ hàng</Text>
           <TouchableOpacity
             style={styles.backToCartButton}
             onPress={() => router.push("/cart")}
           >
-            <Text style={styles.backToCartButtonText}>🛍️ Quay lại giỏ hàng</Text>
+            <ShoppingCart color="#fff" size={18} strokeWidth={2} />
+            <Text style={styles.backToCartButtonText}>Quay lại giỏ hàng</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -263,9 +239,9 @@ export default function Checkout() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#ff9800" />
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
       <LinearGradient
-        colors={['#ff9800', '#f57c00']}
+        colors={['#4caf50', '#388e3c']}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Xác nhận thanh toán</Text>
@@ -276,7 +252,10 @@ export default function Checkout() {
         {/* Đơn hàng */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🛍️ Giỏ hàng của bạn</Text>
+            <View style={styles.sectionTitleRow}>
+              <ShoppingCart color="#1a1a1a" size={20} strokeWidth={2.5} />
+              <Text style={styles.sectionTitle}>Giỏ hàng của bạn</Text>
+            </View>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{items.length}</Text>
             </View>
@@ -304,38 +283,54 @@ export default function Checkout() {
 
         {/* Thông tin giao hàng */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Thông tin giao hàng</Text>
+          <View style={styles.sectionTitleRow}>
+            <MapPin color="#1a1a1a" size={20} strokeWidth={2.5} />
+            <Text style={styles.sectionTitle}>Thông tin giao hàng</Text>
+          </View>
           {shippingLoading && !shipping && <Text style={styles.mutedText}>Đang tải...</Text>}
           {!isShippingValid && !shippingLoading ? (
             <View style={styles.shippingEmptyState}>
-              <Text style={styles.warningIcon}>⚠️</Text>
+              <AlertCircle color="#4caf50" size={48} strokeWidth={1.5} />
               <Text style={styles.warningText}>Chưa có thông tin giao hàng</Text>
               <TouchableOpacity
                 style={styles.shippingButton}
                 onPress={() => router.push("/shippinginfo?redirect=checkout")}
               >
-                <Text style={styles.shippingButtonText}>📝 Nhập thông tin giao hàng</Text>
+                <FileText color="#fff" size={18} strokeWidth={2} />
+                <Text style={styles.shippingButtonText}>Nhập thông tin giao hàng</Text>
               </TouchableOpacity>
             </View>
           ) : isShippingValid ? (
             <View style={styles.shippingCard}>
               <View style={styles.shippingRow}>
-                <Text style={styles.shippingLabel}>📞 Điện thoại:</Text>
+                <View style={styles.shippingLabelRow}>
+                  <Phone color="#666" size={16} strokeWidth={2} />
+                  <Text style={styles.shippingLabel}>Điện thoại:</Text>
+                </View>
                 <Text style={styles.shippingValue}>{shipping.phone}</Text>
               </View>
               <View style={styles.shippingRow}>
-                <Text style={styles.shippingLabel}>🏠 Địa chỉ:</Text>
+                <View style={styles.shippingLabelRow}>
+                  <Home color="#666" size={16} strokeWidth={2} />
+                  <Text style={styles.shippingLabel}>Địa chỉ:</Text>
+                </View>
                 <Text style={styles.shippingValue}>{shipping.addressLine}</Text>
               </View>
               {shipping.city ? (
                 <View style={styles.shippingRow}>
-                  <Text style={styles.shippingLabel}>🌆 Tỉnh/Thành:</Text>
+                  <View style={styles.shippingLabelRow}>
+                    <MapPinned color="#666" size={16} strokeWidth={2} />
+                    <Text style={styles.shippingLabel}>Tỉnh/Thành:</Text>
+                  </View>
                   <Text style={styles.shippingValue}>{shipping.city}</Text>
                 </View>
               ) : null}
               {shipping.note ? (
                 <View style={styles.shippingRow}>
-                  <Text style={styles.shippingLabel}>📝 Ghi chú:</Text>
+                  <View style={styles.shippingLabelRow}>
+                    <FileText color="#666" size={16} strokeWidth={2} />
+                    <Text style={styles.shippingLabel}>Ghi chú:</Text>
+                  </View>
                   <Text style={styles.shippingValue}>{shipping.note}</Text>
                 </View>
               ) : null}
@@ -343,7 +338,8 @@ export default function Checkout() {
                 style={styles.editShippingButton}
                 onPress={() => router.push("/shippinginfo?redirect=checkout")}
               >
-                <Text style={styles.editShippingButtonText}>✏️ Sửa thông tin</Text>
+                <Edit color="#4caf50" size={16} strokeWidth={2} />
+                <Text style={styles.editShippingButtonText}>Sửa thông tin</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -351,39 +347,23 @@ export default function Checkout() {
 
         {/* Phương thức thanh toán */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💳 Phương thức thanh toán</Text>
+          <View style={styles.sectionTitleRow}>
+            <Wallet color="#1a1a1a" size={20} strokeWidth={2.5} />
+            <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+          </View>
           
-          <TouchableOpacity
-            style={[styles.paymentOption, method === "COD" && styles.paymentOptionSelected]}
-            onPress={() => setMethod("COD")}
-          >
+          <View style={[styles.paymentOption, styles.paymentOptionSelected]}>
             <View style={styles.paymentLeft}>
               <View style={styles.radioButton}>
-                {method === "COD" && <View style={styles.radioSelected} />}
+                <View style={styles.radioSelected} />
               </View>
               <View>
-                <Text style={styles.paymentTitle}>💵 COD</Text>
+                <Text style={styles.paymentTitle}>COD</Text>
                 <Text style={styles.paymentSubtitle}>Thanh toán khi nhận hàng</Text>
               </View>
             </View>
-            {method === "COD" && <Text style={styles.checkIcon}>✓</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.paymentOption, method === "PAYOS" && styles.paymentOptionSelected]}
-            onPress={() => setMethod("PAYOS")}
-          >
-            <View style={styles.paymentLeft}>
-              <View style={styles.radioButton}>
-                {method === "PAYOS" && <View style={styles.radioSelected} />}
-              </View>
-              <View>
-                <Text style={styles.paymentTitle}>💳 PayOS</Text>
-                <Text style={styles.paymentSubtitle}>Thanh toán online ngay</Text>
-              </View>
-            </View>
-            {method === "PAYOS" && <Text style={styles.checkIcon}>✓</Text>}
-          </TouchableOpacity>
+            <Check color="#4caf50" size={24} strokeWidth={2.5} />
+          </View>
         </View>
 
         {/* Nút đặt hàng */}
@@ -396,12 +376,13 @@ export default function Checkout() {
             onPress={handlePlaceOrder}
             disabled={!items.length || placing || !isShippingValid || cartLoading || shippingLoading}
           >
+            {placing ? (
+              <Loader color="#fff" size={20} strokeWidth={2.5} />
+            ) : (
+              <Check color="#fff" size={20} strokeWidth={2.5} />
+            )}
             <Text style={styles.placeOrderButtonText}>
-              {placing
-                ? "⏳ Đang xử lý..."
-                : method === "COD"
-                ? "✅ Đặt hàng (COD)"
-                : "💳 Tiếp tục với PayOS"}
+              {placing ? "Đang xử lý..." : "Đặt hàng (COD)"}
             </Text>
           </TouchableOpacity>
           <Text style={styles.footerNote}>
@@ -428,16 +409,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 30,
-  },
-  emptyIcon: {
-    fontSize: 80,
-    marginBottom: 20,
+    gap: 12,
   },
   emptyTitle: {
     fontSize: 24,
     fontWeight: "800",
     color: "#333",
-    marginBottom: 12,
+    marginTop: 16,
   },
   header: {
     paddingTop: 10,
@@ -454,11 +432,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "700",
   },
   headerTitle: {
     fontSize: 22,
@@ -487,14 +460,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
   },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
     color: "#1a1a1a",
-    marginBottom: 16,
   },
   badge: {
-    backgroundColor: "#ff9800",
+    backgroundColor: "#4caf50",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -534,7 +512,7 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: 16,
-    color: "#ff9800",
+    color: "#4caf50",
     fontWeight: "700",
   },
   divider: {
@@ -555,19 +533,16 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#ff9800",
+    color: "#4caf50",
   },
   shippingEmptyState: {
     alignItems: "center",
     paddingVertical: 20,
   },
-  warningIcon: {
-    fontSize: 50,
-    marginBottom: 12,
-  },
   warningText: {
     fontSize: 15,
     color: "#666",
+    marginTop: 12,
     marginBottom: 16,
     fontWeight: "600",
   },
@@ -581,11 +556,16 @@ const styles = StyleSheet.create({
   shippingRow: {
     marginBottom: 12,
   },
+  shippingLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
   shippingLabel: {
     fontSize: 14,
     color: "#666",
     fontWeight: "600",
-    marginBottom: 4,
   },
   shippingValue: {
     fontSize: 15,
@@ -594,11 +574,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   shippingButton: {
-    backgroundColor: "#ff9800",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4caf50",
     padding: 14,
     borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#ff9800",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -610,16 +593,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   editShippingButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     backgroundColor: "#fff",
     padding: 12,
     borderRadius: 10,
-    alignItems: "center",
     marginTop: 12,
     borderWidth: 1.5,
-    borderColor: "#ff9800",
+    borderColor: "#4caf50",
   },
   editShippingButtonText: {
-    color: "#ff9800",
+    color: "#4caf50",
     fontWeight: "700",
     fontSize: 14,
   },
@@ -636,8 +622,8 @@ const styles = StyleSheet.create({
     borderColor: "#e9ecef",
   },
   paymentOptionSelected: {
-    backgroundColor: "#fff5e6",
-    borderColor: "#ff9800",
+    backgroundColor: "#e8f5e9",
+    borderColor: "#4caf50",
   },
   paymentLeft: {
     flexDirection: "row",
@@ -648,7 +634,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#ff9800",
+    borderColor: "#4caf50",
     marginRight: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -657,7 +643,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#ff9800",
+    backgroundColor: "#4caf50",
   },
   paymentTitle: {
     fontSize: 16,
@@ -670,17 +656,15 @@ const styles = StyleSheet.create({
     color: "#666",
     fontWeight: "500",
   },
-  checkIcon: {
-    fontSize: 24,
-    color: "#ff9800",
-    fontWeight: "700",
-  },
   placeOrderButton: {
-    backgroundColor: "#ff9800",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4caf50",
     padding: 18,
     borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#ff9800",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -704,13 +688,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   loginButton: {
-    backgroundColor: "#ff9800",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4caf50",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
-    alignItems: "center",
     marginTop: 20,
-    shadowColor: "#ff9800",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -722,13 +709,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   backToCartButton: {
-    backgroundColor: "#ff9800",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4caf50",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
-    alignItems: "center",
     marginTop: 20,
-    shadowColor: "#ff9800",
+    shadowColor: "#4caf50",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
