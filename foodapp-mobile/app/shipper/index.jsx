@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f3f4f6" },
   appBar: {
     backgroundColor: "#ef6c00",
-    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
     flexDirection: "row",

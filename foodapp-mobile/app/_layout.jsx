@@ -122,6 +122,12 @@ export default function RootLayout() {
               headerShown: false
             }} 
           />
+          <Stack.Screen 
+            name="shipper" 
+            options={{ 
+              headerShown: false
+            }} 
+          />
         </Stack>
         <ChatbotWidget />
       </View>

@@ -123,8 +123,8 @@ export default function ChatbotWidget({ onClose }) {
     }
   }, [isOpen, messages]);
 
-  // Ẩn chatbot ở trang login và register
-  const hiddenRoutes = ['/login', '/register', '/index', '/loginsms', '/changepassword', '/forgotpassword'];
+  // Ẩn chatbot ở các trang: login, register, profile, order, shipper, etc.
+  const hiddenRoutes = ['/login', '/register', '/index', '/loginsms', '/changepassword', '/forgotpassword', '/profile', '/editprofile', '/order', '/shipper'];
   const shouldHide = hiddenRoutes.includes(pathname);
 
   if (shouldHide) {
