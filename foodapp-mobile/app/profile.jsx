@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, StatusBar, Alert, ActivityIndicator } from "react-native";
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../src/store/auth";
 import { useMe } from "../src/api/hooks";
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Mail, Phone, MapPin, Lock, Heart, ShoppingBag, LogOut, ChevronRight, Settings, Home as HomeIcon, Save } from 'lucide-react-native';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyShipping, upsertMyShipping } from "../src/api/shipping";
+import { User, MapPin, Lock, Heart, ShoppingBag, LogOut, ChevronRight, Settings } from 'lucide-react-native';
 
 export default function Profile() {
   const { user, clear } = useAuth();
@@ -62,12 +60,6 @@ export default function Profile() {
               title="Đổi mật khẩu" 
               onPress={() => router.push("/changepassword")}
               color="#ff9800"
-            />
-            <MenuItem 
-              icon={MapPin} 
-              title="Địa chỉ giao hàng" 
-              onPress={() => router.push("/shippinginfo")}
-              color="#2196f3"
             />
           </View>
         </View>

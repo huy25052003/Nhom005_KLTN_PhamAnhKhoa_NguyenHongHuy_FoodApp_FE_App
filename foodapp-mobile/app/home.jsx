@@ -8,7 +8,7 @@ import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon, User } from 'lucide-react-native';
+import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon, User, MessageCircle } from 'lucide-react-native';
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -314,11 +314,15 @@ export default function Home() {
           <HomeIcon color="#ff6b6b" size={28} strokeWidth={2} fill="#ff6b6b" />
           <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <View style={styles.offersIconContainer}>
-            <Text style={styles.offersIcon}>🎁</Text>
-          </View>
-          <Text style={styles.navText}>Offers</Text>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => {
+            // TODO: Integrate chatbot hoặc navigate to chat screen
+            alert("Chức năng chat đang được phát triển");
+          }}
+        >
+          <MessageCircle color="#9e9e9e" size={28} strokeWidth={2} />
+          <Text style={styles.navText}>Tư vấn</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("category")}>
           <Utensils color="#9e9e9e" size={28} strokeWidth={2} />

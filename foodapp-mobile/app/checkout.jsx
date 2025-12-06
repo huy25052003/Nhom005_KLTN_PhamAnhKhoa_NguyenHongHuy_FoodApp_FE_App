@@ -78,7 +78,7 @@ export default function Checkout() {
         [
           {
             text: "Nhập thông tin",
-            onPress: () => router.push("/shippinginfo?redirect=checkout"),
+            onPress: () => router.push("/editprofile"),
           },
           { text: "Hủy", style: "cancel" },
         ]
@@ -294,7 +294,7 @@ export default function Checkout() {
               <Text style={styles.warningText}>Chưa có thông tin giao hàng</Text>
               <TouchableOpacity
                 style={styles.shippingButton}
-                onPress={() => router.push("/shippinginfo?redirect=checkout")}
+                onPress={() => router.push("/editprofile")}
               >
                 <FileText color="#fff" size={18} strokeWidth={2} />
                 <Text style={styles.shippingButtonText}>Nhập thông tin giao hàng</Text>
@@ -336,7 +336,7 @@ export default function Checkout() {
               ) : null}
               <TouchableOpacity
                 style={styles.editShippingButton}
-                onPress={() => router.push("/shippinginfo?redirect=checkout")}
+                onPress={() => router.push("/editprofile")}
               >
                 <Edit color="#4caf50" size={16} strokeWidth={2} />
                 <Text style={styles.editShippingButtonText}>Sửa thông tin</Text>
