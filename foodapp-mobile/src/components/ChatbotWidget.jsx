@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { usePathname } from "expo-router";
 
-export default function ChatbotWidget() {
+export default function ChatbotWidget({ onClose }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -147,7 +147,10 @@ export default function ChatbotWidget() {
         visible={isOpen}
         animationType="slide"
         transparent={false}
-        onRequestClose={() => setIsOpen(false)}
+        onRequestClose={() => {
+          setIsOpen(false);
+          onClose?.();
+        }}
       >
         <KeyboardAvoidingView 
           style={styles.modalContainer}
@@ -159,7 +162,10 @@ export default function ChatbotWidget() {
             <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setIsOpen(false)}
+              onPress={() => {
+                setIsOpen(false);
+                onClose?.();
+              }}
             >
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>

@@ -4,7 +4,7 @@ import { Redirect } from "expo-router";
 import { useAuth } from "../src/store/auth";
 
 export default function Index() {
-  const { hydrate } = useAuth();
+  const { hydrate, user } = useAuth();
   const [ready, setReady] = useState(false);
 
   useEffect(() => { (async () => { await hydrate(); setReady(true); })(); }, []);
@@ -17,6 +17,6 @@ export default function Index() {
     );
   }
 
-  // Luôn redirect về home (cho phép chế độ khách)
-  return <Redirect href="/home" />;
+  // Redirect to login if not logged in, otherwise home
+  return <Redirect href={user ? "/home" : "/login"} />;
 }

@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { getCart, clearCart } from "../src/api/cart";
 import { getMyShipping } from "../src/api/shipping";
+import { getProfile } from "../src/api/user";
 import { placeOrder } from "../src/api/order";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
@@ -56,11 +57,26 @@ export default function Checkout() {
     enabled: !!user,
   });
 
+  // Lấy thông tin profile để tính ưu đãi thành viên
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+    enabled: !!user,
+  });
+
   const items = cart?.items || cart?.cartItems || [];
-  const totalPrice = items.reduce(
+  
+  const subtotal = items.reduce(
     (sum, item) => sum + (item.product?.price ?? 0) * (item.quantity ?? 0),
     0
   );
+  
+  // Ưu đãi thành viên
+  const memberRank = profile?.memberRank || "ĐỒNG";
+  const loyaltyDiscountPercent = memberRank === "ĐỒNG" ? 1 : memberRank === "BẠC" ? 3 : memberRank === "VÀNG" ? 5 : memberRank === "KIM CƯƠNG" ? 10 : 0;
+  const loyaltyDiscount = Math.round(subtotal * loyaltyDiscountPercent / 100);
+  
+  const totalPrice = subtotal - loyaltyDiscount;
 
   const isShippingValid = shipping && shipping.phone && shipping.addressLine;
 
@@ -274,6 +290,17 @@ export default function Checkout() {
               </Text>
             </View>
           ))}
+          <View style={styles.divider} />
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Tạm tính:</Text>
+            <Text style={styles.summaryValue}>{formatVND(subtotal)}</Text>
+          </View>
+          {loyaltyDiscount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>🏆 Ưu đãi {memberRank} ({loyaltyDiscountPercent}%):</Text>
+              <Text style={styles.discountValue}>-{formatVND(loyaltyDiscount)}</Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Tổng cộng</Text>
@@ -516,9 +543,30 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   divider: {
-    height: 2,
+    height: 1,
     backgroundColor: "#e9ecef",
-    marginVertical: 16,
+    marginVertical: 12,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  summaryLabel: {
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
+  },
+  summaryValue: {
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontWeight: "600",
+  },
+  discountValue: {
+    fontSize: 15,
+    color: "#ff6b6b",
+    fontWeight: "700",
   },
   totalRow: {
     flexDirection: "row",

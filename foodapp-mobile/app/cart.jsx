@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,17 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  TextInput,
 } from "react-native";
 import { router } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCart, updateCartItem, removeCartItem, clearCart } from "../src/api/cart";
+import { getActivePromotions, previewPromotion } from "../src/api/promotions";
+import { getProfile } from "../src/api/user";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { LinearGradient } from 'expo-linear-gradient';
-import { ShoppingCart, Lock, Trash2, ChevronLeft, Minus, Plus, CreditCard } from 'lucide-react-native';
+import { ShoppingCart, Lock, Trash2, ChevronLeft, Minus, Plus, CreditCard, Tag, Gift } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
@@ -24,8 +27,23 @@ export default function Cart() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { setCount } = useCart();
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState("");
 
   console.log("Cart auth state:", { user }); // Debug trạng thái đăng nhập
+
+  const { data: promotions = [] } = useQuery({
+    queryKey: ["promotions", "active"],
+    queryFn: getActivePromotions,
+    enabled: !!user,
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+    enabled: !!user,
+  });
 
   const { data: cart, isLoading, error } = useQuery({
     queryKey: ["cart"],
@@ -74,6 +92,29 @@ export default function Cart() {
     } catch (e) {
       console.error("Error updating cart count:", e);
     }
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Vui lòng nhập mã giảm giá");
+      return;
+    }
+    try {
+      const items = cart?.items || cart?.cartItems || [];
+      const preview = await previewPromotion(promoCode, items);
+      setAppliedPromo(preview);
+      setPromoError("");
+      Alert.alert("Thành công", `Đã áp dụng mã giảm giá: ${promoCode}`);
+    } catch (e) {
+      setPromoError(e?.response?.data?.message || "Mã giảm giá không hợp lệ");
+      setAppliedPromo(null);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError("");
   };
 
   if (!user) {
@@ -163,10 +204,18 @@ export default function Cart() {
     );
   }
 
-  const totalPrice = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + (item.product?.price ?? 0) * (item.quantity ?? 0),
     0
   );
+  
+  // Ưu đãi thành viên (theo rank)
+  const memberRank = profile?.memberRank || "ĐỒNG";
+  const loyaltyDiscountPercent = memberRank === "ĐỒNG" ? 1 : memberRank === "BẠC" ? 3 : memberRank === "VÀNG" ? 5 : memberRank === "KIM CƯƠNG" ? 10 : 0;
+  const loyaltyDiscount = Math.round(subtotal * loyaltyDiscountPercent / 100);
+  
+  const discount = appliedPromo?.discount || 0;
+  const totalPrice = subtotal - loyaltyDiscount - discount;
 
   return (
     <View style={styles.container}>
@@ -244,6 +293,80 @@ export default function Cart() {
           ))}
         </View>
 
+        {/* Ưu đãi hiện có */}
+        {promotions.length > 0 && (
+          <View style={styles.promotionSection}>
+            <View style={styles.sectionTitleRow}>
+              <Gift color="#ff6b6b" size={20} strokeWidth={2.5} />
+              <Text style={styles.sectionTitle}>Ưu đãi dành cho bạn</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promotionScroll}>
+              {promotions.map((promo) => (
+                <TouchableOpacity
+                  key={promo.id}
+                  style={styles.promoCard}
+                  onPress={() => {
+                    setPromoCode(promo.code);
+                    setPromoError("");
+                  }}
+                >
+                  <View style={styles.promoHeader}>
+                    <Tag color="#ff6b6b" size={16} strokeWidth={2} />
+                    <Text style={styles.promoCode}>{promo.code}</Text>
+                  </View>
+                  <Text style={styles.promoDescription} numberOfLines={2}>
+                    {promo.description}
+                  </Text>
+                  <Text style={styles.promoDiscount}>
+                    Giảm {promo.discountType === 'PERCENTAGE' 
+                      ? `${promo.discountValue}%` 
+                      : formatVND(promo.discountValue)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Nhập mã giảm giá */}
+        <View style={styles.couponSection}>
+          <View style={styles.sectionTitleRow}>
+            <Tag color="#4caf50" size={20} strokeWidth={2.5} />
+            <Text style={styles.sectionTitle}>Mã giảm giá</Text>
+          </View>
+          {appliedPromo ? (
+            <View style={styles.appliedPromoBox}>
+              <View style={styles.appliedPromoLeft}>
+                <Tag color="#4caf50" size={18} strokeWidth={2} />
+                <View>
+                  <Text style={styles.appliedPromoCode}>{promoCode}</Text>
+                  <Text style={styles.appliedPromoDiscount}>-{formatVND(discount)}</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={handleRemovePromo}>
+                <Text style={styles.removePromoText}>Xóa</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.couponInputContainer}>
+              <TextInput
+                style={styles.couponInput}
+                placeholder="Nhập mã giảm giá"
+                value={promoCode}
+                onChangeText={(text) => {
+                  setPromoCode(text.toUpperCase());
+                  setPromoError("");
+                }}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity style={styles.applyButton} onPress={handleApplyPromo}>
+                <Text style={styles.applyButtonText}>Áp dụng</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {promoError ? <Text style={styles.errorText}>{promoError}</Text> : null}
+        </View>
+
         <View style={styles.summarySection}>
           <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
           <View style={styles.summaryRow}>
@@ -256,6 +379,22 @@ export default function Cart() {
               {items.reduce((sum, item) => sum + (item.quantity ?? 0), 0)}
             </Text>
           </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Tạm tính:</Text>
+            <Text style={styles.summaryValue}>{formatVND(subtotal)}</Text>
+          </View>
+          {loyaltyDiscount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>🏆 Ưu đãi thành viên {memberRank} ({loyaltyDiscountPercent}%):</Text>
+              <Text style={styles.discountValue}>-{formatVND(loyaltyDiscount)}</Text>
+            </View>
+          )}
+          {discount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Giảm giá:</Text>
+              <Text style={styles.discountValue}>-{formatVND(discount)}</Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Tổng thanh toán</Text>
@@ -467,6 +606,134 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  promotionSection: {
+    margin: 16,
+    marginTop: 0,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  promotionScroll: {
+    marginTop: 12,
+  },
+  promoCard: {
+    backgroundColor: "#fff5f5",
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    width: 200,
+    borderWidth: 1,
+    borderColor: "#ffcccc",
+  },
+  promoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  promoCode: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ff6b6b",
+  },
+  promoDescription: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  promoDiscount: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#ff6b6b",
+  },
+  couponSection: {
+    margin: 16,
+    marginTop: 0,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  couponInputContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  couponInput: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontWeight: "600",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  applyButton: {
+    backgroundColor: "#4caf50",
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  appliedPromoBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#e8f5e9",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#4caf50",
+  },
+  appliedPromoLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  appliedPromoCode: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#2e7d32",
+  },
+  appliedPromoDiscount: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#4caf50",
+  },
+  removePromoText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ff6b6b",
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 13,
+    marginTop: 6,
+    fontWeight: "500",
+  },
   summarySection: {
     margin: 16,
     marginTop: 0,
@@ -500,6 +767,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1a1a1a",
     fontWeight: "600",
+  },
+  discountValue: {
+    fontSize: 15,
+    color: "#ff6b6b",
+    fontWeight: "700",
   },
   divider: {
     height: 1,

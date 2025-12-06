@@ -9,6 +9,7 @@ import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon, User, MessageCircle } from 'lucide-react-native';
+import AdminChatWidget from "../src/components/AdminChatWidget";
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -28,6 +29,7 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
+  const [isAdminChatOpen, setIsAdminChatOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -311,28 +313,28 @@ export default function Home() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
-          <HomeIcon color="#ff6b6b" size={28} strokeWidth={2} fill="#ff6b6b" />
+          <HomeIcon color="#ff6b6b" size={24} strokeWidth={2} fill="#ff6b6b" />
           <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => {
-            // TODO: Integrate chatbot hoặc navigate to chat screen
-            alert("Chức năng chat đang được phát triển");
-          }}
+          onPress={() => setIsAdminChatOpen(true)}
         >
-          <MessageCircle color="#9e9e9e" size={28} strokeWidth={2} />
+          <MessageCircle color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Tư vấn</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("category")}>
-          <Utensils color="#9e9e9e" size={28} strokeWidth={2} />
+          <Utensils color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Menu</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("profile")}>
-          <User color="#9e9e9e" size={28} strokeWidth={2} />
+          <User color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Profile</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Admin Chat Widget */}
+      {isAdminChatOpen && <AdminChatWidget onClose={() => setIsAdminChatOpen(false)} />}
     </View>
   );
 }
