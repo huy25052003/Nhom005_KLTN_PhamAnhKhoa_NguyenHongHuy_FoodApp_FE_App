@@ -232,7 +232,7 @@ export default function ChatbotWidget() {
 const styles = StyleSheet.create({
   floatingButton: {
     position: "absolute",
-    bottom: 20,
+    bottom: 90,
     right: 20,
     width: 60,
     height: 60,

@@ -96,8 +96,10 @@ export default function LoginSMS() {
 
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
       
+      {/* Header với gradient */}
       <LinearGradient colors={['#4caf50', '#388e3c']} style={styles.header}>
         <Smartphone color="#fff" size={60} strokeWidth={1.5} />
         <Text style={styles.headerTitle}>Đăng nhập SMS</Text>
@@ -106,7 +108,9 @@ export default function LoginSMS() {
         </Text>
       </LinearGradient>
 
+      {/* Form content */}
       <View style={styles.formContainer}>
+        {/* Bước 1: Nhập số điện thoại */}
         {step === 1 ? (
           <>
             <View>
@@ -145,6 +149,7 @@ export default function LoginSMS() {
             </TouchableOpacity>
           </>
         ) : (
+          /* Bước 2: Nhập mã OTP */
           <>
             <View style={styles.phoneNumberDisplay}>
               <Text style={styles.phoneNumberLabel}>Mã OTP đã gửi đến:</Text>

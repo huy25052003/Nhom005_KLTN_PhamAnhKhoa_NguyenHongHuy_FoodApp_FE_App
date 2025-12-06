@@ -45,8 +45,10 @@ export default function ChangePassword() {
 
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
       
+      {/* Header với gradient và nút back */}
       <LinearGradient colors={['#4caf50', '#388e3c']} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft color="#fff" size={24} strokeWidth={2} />
@@ -56,7 +58,9 @@ export default function ChangePassword() {
         <Text style={styles.headerSubtitle}>Cập nhật mật khẩu của bạn</Text>
       </LinearGradient>
 
+      {/* Form đổi mật khẩu */}
       <View style={styles.formContainer}>
+        {/* Input mật khẩu hiện tại */}
         <View>
           <View style={[styles.inputGroup, errors.oldPassword && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -86,6 +90,7 @@ export default function ChangePassword() {
           {errors.oldPassword ? <Text style={styles.errorText}>{errors.oldPassword}</Text> : null}
         </View>
 
+        {/* Input mật khẩu mới */}
         <View>
           <View style={[styles.inputGroup, errors.newPassword && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -115,6 +120,7 @@ export default function ChangePassword() {
           {errors.newPassword ? <Text style={styles.errorText}>{errors.newPassword}</Text> : null}
         </View>
 
+        {/* Input xác nhận mật khẩu mới */}
         <View>
           <View style={[styles.inputGroup, errors.confirmPassword && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -144,6 +150,7 @@ export default function ChangePassword() {
           {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
         </View>
 
+        {/* Nút xác nhận đổi mật khẩu */}
         <TouchableOpacity
           onPress={handleChangePassword}
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}

@@ -48,8 +48,10 @@ export default function EditProfile() {
 
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
       
+      {/* Header với gradient và nút back */}
       <LinearGradient colors={['#4caf50', '#388e3c']} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft color="#fff" size={24} strokeWidth={2} />
@@ -59,6 +61,7 @@ export default function EditProfile() {
         <Text style={styles.headerSubtitle}>Cập nhật thông tin cá nhân</Text>
       </LinearGradient>
 
+      {/* Form chỉnh sửa thông tin */}
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         <View>
           <Text style={styles.label}>Tên người dùng</Text>

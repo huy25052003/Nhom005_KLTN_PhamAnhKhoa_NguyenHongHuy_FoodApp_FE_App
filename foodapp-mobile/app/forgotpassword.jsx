@@ -59,8 +59,10 @@ export default function ForgotPassword() {
 
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
       
+      {/* Header với gradient */}
       <LinearGradient colors={['#4caf50', '#388e3c']} style={styles.header}>
         <KeyRound color="#fff" size={60} strokeWidth={1.5} />
         <Text style={styles.headerTitle}>Quên mật khẩu</Text>
@@ -69,7 +71,9 @@ export default function ForgotPassword() {
         </Text>
       </LinearGradient>
 
+      {/* Form content */}
       <View style={styles.formContainer}>
+        {/* Bước 1: Nhập email */}
         {step === 1 ? (
           <>
             <View>
@@ -107,6 +111,7 @@ export default function ForgotPassword() {
             </TouchableOpacity>
           </>
         ) : (
+          /* Bước 2: Nhập mã và mật khẩu mới */
           <>
             <View>
               <View style={[styles.inputGroup, errors.code && styles.inputGroupError]}>
@@ -182,6 +187,7 @@ export default function ForgotPassword() {
           </>
         )}
 
+        {/* Nút quay lại đăng nhập */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backToLoginButton}>
           <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
         </TouchableOpacity>

@@ -21,7 +21,7 @@ const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
 
 export default function Home() {
   const { user, clear } = useAuth();
-  const { setCount } = useCart();
+  const { count, setCount } = useCart();
   const navigation = useNavigation();
   const { data: me } = useMe();
   const [products, setProducts] = useState([]);
@@ -178,6 +178,18 @@ export default function Home() {
               <Text style={styles.headerGreeting}>Home</Text>
               <Text style={styles.headerTitle}>Banyuwangi, Jaya</Text>
             </View>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("cart")} 
+              style={styles.cartButton}
+            >
+              <ShoppingCart color="#fff" size={26} strokeWidth={2} />
+              {/* Badge số lượng sản phẩm */}
+              {count > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{count}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -415,6 +427,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#4caf50",
+  },
+  cartButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#ff5252",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
   },
   
   // Hero Section

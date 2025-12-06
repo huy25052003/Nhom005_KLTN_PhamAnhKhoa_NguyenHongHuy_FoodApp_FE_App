@@ -78,7 +78,10 @@ export default function Login() {
   };
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+      
+      {/* Header với gradient */}
       <LinearGradient
         colors={['#4caf50', '#388e3c']}
         style={styles.header}
@@ -88,7 +91,9 @@ export default function Login() {
         <Text style={styles.headerSubtitle}>Chào mừng bạn trở lại!</Text>
       </LinearGradient>
 
+      {/* Form đăng nhập */}
       <View style={styles.formContainer}>
+        {/* Input username/email */}
         <View>
           <View style={[styles.inputGroup, errors.username && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -109,6 +114,7 @@ export default function Login() {
           {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
         </View>
 
+        {/* Input password */}
         <View>
           <View style={[styles.inputGroup, errors.password && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -138,6 +144,7 @@ export default function Login() {
           {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
         </View>
 
+        {/* Nút đăng nhập */}
         <TouchableOpacity
           onPress={validateAndSubmit}
           style={[styles.submitButton, login.isPending && styles.submitButtonDisabled]}
@@ -155,6 +162,7 @@ export default function Login() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Links: Quên mật khẩu & Đăng nhập SMS */}
         <View style={styles.linksRow}>
           <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
             <Text style={styles.linkText}>Quên mật khẩu?</Text>
@@ -164,12 +172,14 @@ export default function Login() {
           </TouchableOpacity>
         </View>
 
+        {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>hoặc</Text>
           <View style={styles.dividerLine} />
         </View>
 
+        {/* Nút đăng nhập bằng Google */}
         <TouchableOpacity 
           onPress={handleGoogleLogin}
           style={styles.googleButton}
@@ -183,6 +193,7 @@ export default function Login() {
           </View>
         </TouchableOpacity>
 
+        {/* Nút tạo tài khoản mới */}
         <TouchableOpacity 
           onPress={() => router.push("/register")}
           style={styles.registerButton}
@@ -192,6 +203,7 @@ export default function Login() {
           <Text style={styles.registerText}>Tạo tài khoản mới</Text>
         </TouchableOpacity>
       </View>
+      {/* End formContainer */}
     </View>
   );
 }

@@ -51,7 +51,10 @@ export default function Register() {
 
   return (
     <View style={styles.container}>
+      {/* Status Bar */}
       <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+      
+      {/* Header với gradient */}
       <LinearGradient
         colors={['#4caf50', '#388e3c']}
         style={styles.header}
@@ -61,7 +64,9 @@ export default function Register() {
         <Text style={styles.headerSubtitle}>Tạo tài khoản mới ngay!</Text>
       </LinearGradient>
 
+      {/* Form đăng ký */}
       <View style={styles.formContainer}>
+        {/* Input username/email */}
         <View>
           <View style={[styles.inputGroup, errors.username && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -82,6 +87,7 @@ export default function Register() {
           {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
         </View>
 
+        {/* Input password */}
         <View>
           <View style={[styles.inputGroup, errors.password && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -111,6 +117,7 @@ export default function Register() {
           {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
         </View>
 
+        {/* Input xác nhận password */}
         <View>
           <View style={[styles.inputGroup, errors.confirmPassword && styles.inputGroupError]}>
             <View style={styles.inputIcon}>
@@ -140,6 +147,7 @@ export default function Register() {
           {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
         </View>
 
+        {/* Nút đăng ký */}
         <TouchableOpacity
           onPress={validateAndSubmit}
           style={[styles.submitButton, register.isPending && styles.submitButtonDisabled]}
@@ -157,12 +165,14 @@ export default function Register() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>hoặc</Text>
           <View style={styles.dividerLine} />
         </View>
 
+        {/* Nút chuyển sang đăng nhập */}
         <TouchableOpacity 
           onPress={() => router.push("/login")}
           style={styles.loginButton}
