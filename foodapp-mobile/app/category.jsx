@@ -138,9 +138,7 @@ export default function Category() {
           colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
-          </TouchableOpacity>
+          <View style={{ width: 40 }} />
           <Text style={styles.headerTitle}>Danh mục</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
@@ -160,9 +158,7 @@ export default function Category() {
           colors={['#4caf50', '#388e3c']}
           style={styles.header}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
-          </TouchableOpacity>
+          <View style={{ width: 40 }} />
           <Text style={styles.headerTitle}>Danh mục</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
@@ -184,13 +180,9 @@ export default function Category() {
         colors={['#4caf50', '#388e3c']}
         style={styles.header}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>{catName}</Text>
-        <TouchableOpacity onPress={() => router.push("/cart")} style={styles.cartButton}>
-          <ShoppingCart color="#fff" size={24} strokeWidth={2} />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </LinearGradient>
       
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -218,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 48,
+    paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 16,
   },
