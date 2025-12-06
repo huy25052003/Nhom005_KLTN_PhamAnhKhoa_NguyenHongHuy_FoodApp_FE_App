@@ -4,24 +4,39 @@ import { router } from "expo-router";
 import { useRegister } from "../src/api/hooks";
 import { useAuth } from "../src/store/auth";
 import { LinearGradient } from 'expo-linear-gradient';
-import { UserPlus, User, Lock, CheckCircle, LogIn } from 'lucide-react-native';
+import { UserPlus, User, Lock, CheckCircle, LogIn, Eye, EyeOff } from 'lucide-react-native';
 
 export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({ username: "", password: "", confirmPassword: "" });
+  
   const register = useRegister();
   const { setAuth } = useAuth();
 
+  const validateAndSubmit = async () => {
+    let newErrors = {};
+    
+    if (!username.trim()) newErrors.username = "Vui lòng nhập tài khoản";
+    if (!password) newErrors.password = "Vui lòng nhập mật khẩu";
+    else if (password.length < 6) newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+    
+    if (!confirmPassword) newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (password !== confirmPassword) newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    submit();
+  };
+
   const submit = async () => {
-    if (password !== confirmPassword) {
-      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
-      return;
-    }
-    if (!username || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
     try {
       const { token, user } = await register.mutateAsync({ username, password });
       console.log("Register response:", { token, user });
@@ -47,50 +62,86 @@ export default function Register() {
       </LinearGradient>
 
       <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <View style={styles.inputIcon}>
-            <User color="#4caf50" size={20} strokeWidth={2} />
+        <View>
+          <View style={[styles.inputGroup, errors.username && styles.inputGroupError]}>
+            <View style={styles.inputIcon}>
+              <User color={errors.username ? "#f44336" : "#4caf50"} size={20} strokeWidth={2} />
+            </View>
+            <TextInput
+              placeholder="Email hoặc Tên đăng nhập"
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+              value={username}
+              onChangeText={(text) => {
+                setUsername(text);
+                if (errors.username) setErrors({ ...errors, username: "" });
+              }}
+              style={styles.input}
+            />
           </View>
-          <TextInput
-            placeholder="Tên đăng nhập"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            value={username}
-            onChangeText={setUsername}
-            style={styles.input}
-          />
+          {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
         </View>
 
-        <View style={styles.inputGroup}>
-          <View style={styles.inputIcon}>
-            <Lock color="#4caf50" size={20} strokeWidth={2} />
+        <View>
+          <View style={[styles.inputGroup, errors.password && styles.inputGroupError]}>
+            <View style={styles.inputIcon}>
+              <Lock color={errors.password ? "#f44336" : "#4caf50"} size={20} strokeWidth={2} />
+            </View>
+            <TextInput
+              placeholder="Mật khẩu"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors({ ...errors, password: "" });
+              }}
+              style={[styles.input, { paddingRight: 50 }]}
+            />
+            <TouchableOpacity 
+              onPress={() => setShowPassword(!showPassword)} 
+              style={styles.eyeIcon}
+            >
+              {showPassword ? 
+                <EyeOff color="#999" size={20} strokeWidth={2} /> : 
+                <Eye color="#999" size={20} strokeWidth={2} />
+              }
+            </TouchableOpacity>
           </View>
-          <TextInput
-            placeholder="Mật khẩu"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
+          {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
         </View>
 
-        <View style={styles.inputGroup}>
-          <View style={styles.inputIcon}>
-            <CheckCircle color="#4caf50" size={20} strokeWidth={2} />
+        <View>
+          <View style={[styles.inputGroup, errors.confirmPassword && styles.inputGroupError]}>
+            <View style={styles.inputIcon}>
+              <CheckCircle color={errors.confirmPassword ? "#f44336" : "#4caf50"} size={20} strokeWidth={2} />
+            </View>
+            <TextInput
+              placeholder="Xác nhận mật khẩu"
+              placeholderTextColor="#999"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: "" });
+              }}
+              style={[styles.input, { paddingRight: 50 }]}
+            />
+            <TouchableOpacity 
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)} 
+              style={styles.eyeIcon}
+            >
+              {showConfirmPassword ? 
+                <EyeOff color="#999" size={20} strokeWidth={2} /> : 
+                <Eye color="#999" size={20} strokeWidth={2} />
+              }
+            </TouchableOpacity>
           </View>
-          <TextInput
-            placeholder="Xác nhận mật khẩu"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            style={styles.input}
-          />
+          {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
         </View>
 
         <TouchableOpacity
-          onPress={submit}
+          onPress={validateAndSubmit}
           style={[styles.submitButton, register.isPending && styles.submitButtonDisabled]}
           disabled={register.isPending}
           activeOpacity={0.8}
@@ -161,13 +212,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  inputGroupError: {
+    borderColor: "#f44336",
+    borderWidth: 1.5,
   },
   inputIcon: {
     marginRight: 12,
@@ -177,6 +234,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: "#333",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 16,
+    padding: 8,
+  },
+  errorText: {
+    color: "#f44336",
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   submitButton: {
     borderRadius: 16,

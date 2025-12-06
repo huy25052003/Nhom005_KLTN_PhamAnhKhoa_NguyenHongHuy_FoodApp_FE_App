@@ -4,14 +4,40 @@ import { router } from "expo-router";
 import { useLogin } from "../src/api/hooks";
 import { useAuth } from "../src/store/auth";
 import { LinearGradient } from 'expo-linear-gradient';
-import { LogIn, User, Lock, UserPlus } from 'lucide-react-native';
+import { LogIn, User, Lock, UserPlus, Eye, EyeOff } from 'lucide-react-native';
 import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const [username, setU] = useState("");
   const [password, setP] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({ username: "", password: "" });
+  
   const login = useLogin();
   const setAuth = useAuth((s) => s.setAuth);
+
+  const handleGoogleLogin = () => {
+    Alert.alert(
+      "Đăng nhập Google",
+      "Tính năng này yêu cầu cài đặt Firebase. Xem file SETUP_NEW_FEATURES.md để cấu hình.",
+      [{ text: "OK" }]
+    );
+  };
+
+  const validateAndSubmit = async () => {
+    let newErrors = {};
+    
+    if (!username.trim()) newErrors.username = "Vui lòng nhập tài khoản";
+    if (!password) newErrors.password = "Vui lòng nhập mật khẩu";
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    submit();
+  };
 
   const submit = async () => {
     try {
@@ -63,36 +89,57 @@ export default function Login() {
       </LinearGradient>
 
       <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <View style={styles.inputIcon}>
-            <User color="#4caf50" size={20} strokeWidth={2} />
+        <View>
+          <View style={[styles.inputGroup, errors.username && styles.inputGroupError]}>
+            <View style={styles.inputIcon}>
+              <User color={errors.username ? "#f44336" : "#4caf50"} size={20} strokeWidth={2} />
+            </View>
+            <TextInput
+              placeholder="Email hoặc Tên đăng nhập"
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+              value={username}
+              onChangeText={(text) => {
+                setU(text);
+                if (errors.username) setErrors({ ...errors, username: "" });
+              }}
+              style={styles.input}
+            />
           </View>
-          <TextInput
-            placeholder="Tên đăng nhập"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            value={username}
-            onChangeText={setU}
-            style={styles.input}
-          />
+          {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
         </View>
 
-        <View style={styles.inputGroup}>
-          <View style={styles.inputIcon}>
-            <Lock color="#4caf50" size={20} strokeWidth={2} />
+        <View>
+          <View style={[styles.inputGroup, errors.password && styles.inputGroupError]}>
+            <View style={styles.inputIcon}>
+              <Lock color={errors.password ? "#f44336" : "#4caf50"} size={20} strokeWidth={2} />
+            </View>
+            <TextInput
+              placeholder="Mật khẩu"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setP(text);
+                if (errors.password) setErrors({ ...errors, password: "" });
+              }}
+              style={[styles.input, { paddingRight: 50 }]}
+            />
+            <TouchableOpacity 
+              onPress={() => setShowPassword(!showPassword)} 
+              style={styles.eyeIcon}
+            >
+              {showPassword ? 
+                <EyeOff color="#999" size={20} strokeWidth={2} /> : 
+                <Eye color="#999" size={20} strokeWidth={2} />
+              }
+            </TouchableOpacity>
           </View>
-          <TextInput
-            placeholder="Mật khẩu"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setP}
-            style={styles.input}
-          />
+          {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
         </View>
 
         <TouchableOpacity
-          onPress={submit}
+          onPress={validateAndSubmit}
           style={[styles.submitButton, login.isPending && styles.submitButtonDisabled]}
           disabled={login.isPending}
           activeOpacity={0.8}
@@ -108,11 +155,33 @@ export default function Login() {
           </LinearGradient>
         </TouchableOpacity>
 
+        <View style={styles.linksRow}>
+          <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
+            <Text style={styles.linkText}>Quên mật khẩu?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push("/loginsms")}>
+            <Text style={styles.linkText}>Đăng nhập SMS</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>hoặc</Text>
           <View style={styles.dividerLine} />
         </View>
+
+        <TouchableOpacity 
+          onPress={handleGoogleLogin}
+          style={styles.googleButton}
+          activeOpacity={0.8}
+        >
+          <View style={styles.googleButtonContent}>
+            <View style={styles.googleIcon}>
+              <Text style={styles.googleIconText}>G</Text>
+            </View>
+            <Text style={styles.googleButtonText}>Đăng nhập bằng Google</Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity 
           onPress={() => router.push("/register")}
@@ -163,13 +232,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  inputGroupError: {
+    borderColor: "#f44336",
+    borderWidth: 1.5,
   },
   inputIcon: {
     marginRight: 12,
@@ -179,6 +254,66 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: "#333",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 16,
+    padding: 8,
+  },
+  errorText: {
+    color: "#f44336",
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  linksRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  linkText: {
+    color: "#4caf50",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  googleButton: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  googleButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#db4437",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  googleIconText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  googleButtonText: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "500",
   },
   submitButton: {
     borderRadius: 16,

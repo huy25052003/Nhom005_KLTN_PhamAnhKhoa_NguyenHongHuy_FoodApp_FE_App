@@ -47,6 +47,24 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
+            name="forgotpassword" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="loginsms" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="changepassword" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
             name="shippinginfo" 
             options={{ 
               title: "Thông tin giao hàng",
