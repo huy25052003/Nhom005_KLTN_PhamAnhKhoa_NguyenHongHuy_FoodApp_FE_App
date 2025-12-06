@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getCategoryProducts, getCategoriesPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
+import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
+import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronLeft, Heart, ShoppingCart, AlertCircle } from 'lucide-react-native';
 
-const formatVND = (n) => Number(n || 0).toLocaleString("vi-VN") + " VNĐ";
+const formatVND = (n) => Number(n || 0).toLocaleString("vi-VN") + " đ";
 
 export default function Category() {
-  const { id } = useLocalSearchParams(); // Lấy categoryId từ tham số tìm kiếm
+  const { id } = useLocalSearchParams();
   const [catName, setCatName] = useState("");
   const [items, setItems] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
+  const { user } = useAuth();
   const { setCount } = useCart();
   const router = useRouter();
 
@@ -26,12 +30,14 @@ export default function Category() {
       }
       setLoading(true);
       try {
-        const [cats, products] = await Promise.all([
+        const [cats, products, favRes] = await Promise.all([
           getCategoriesPublic(100).catch(() => []),
           getCategoryProducts(id, 80),
+          user ? getFavorites().catch(() => []) : Promise.resolve([]),
         ]);
         if (!stop) {
           setItems(Array.isArray(products) ? products : []);
+          setFavorites(Array.isArray(favRes) ? favRes : []);
           const cat = (cats || []).find((c) => String(c.id) === String(id));
           setCatName(cat?.name || `Danh mục #${id}`);
         }
@@ -44,11 +50,11 @@ export default function Category() {
     return () => {
       stop = true;
     };
-  }, [id]);
+  }, [id, user]);
 
   async function onAdd(product) {
-    if (!token) {
-      router.push("/login?redirect=/cart");
+    if (!user) {
+      router.push("/login?redirect=/category");
       return;
     }
     try {
@@ -62,6 +68,24 @@ export default function Category() {
     }
   }
 
+  const handleToggleFavorite = async (productId) => {
+    if (!user) {
+      router.push("/login?redirect=/category");
+      return;
+    }
+    try {
+      await toggleFavorite(productId);
+      const favRes = await getFavorites();
+      setFavorites(Array.isArray(favRes) ? favRes : []);
+    } catch (e) {
+      console.error("Lỗi khi toggle favorite:", e);
+    }
+  };
+
+  const isFavorite = (productId) => {
+    return favorites.some(fav => fav.id === productId);
+  };
+
   const renderProduct = (product) => (
     <TouchableOpacity
       key={product.id}
@@ -72,147 +96,267 @@ export default function Category() {
         source={{ uri: product.image || product.imageUrl || "https://via.placeholder.com/150" }}
         style={styles.productImage}
       />
-      <Text style={styles.productName}>{product.name}</Text>
-      <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
-      <TouchableOpacity style={styles.addButton} onPress={() => onAdd(product)}>
-        <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
+      <TouchableOpacity
+        style={styles.favoriteButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          handleToggleFavorite(product.id);
+        }}
+      >
+        <Heart 
+          color={isFavorite(product.id) ? "#ff5252" : "#9e9e9e"} 
+          fill={isFavorite(product.id) ? "#ff5252" : "transparent"}
+          size={22} 
+          strokeWidth={2} 
+        />
       </TouchableOpacity>
+      <View style={{ flex: 1 }}>
+        <View style={styles.productInfo}>
+          <Text style={styles.productName}>{product.name}</Text>
+          <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
+        </View>
+      </View>
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            onAdd(product);
+          }}
+        >
+          <Text style={styles.actionText}>Thêm vào giỏ</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+        <LinearGradient
+          colors={['#4caf50', '#388e3c']}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Danh mục</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4caf50" />
+          <Text style={styles.mutedText}>Đang tải sản phẩm...</Text>
+        </View>
       </View>
     );
   }
 
   if (!id) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Không tìm thấy danh mục.</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+        <LinearGradient
+          colors={['#4caf50', '#388e3c']}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Danh mục</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.emptyContainer}>
+          <AlertCircle color="#999" size={64} strokeWidth={1.5} />
+          <Text style={styles.emptyTitle}>Không tìm thấy danh mục</Text>
+          <TouchableOpacity style={styles.continueButton} onPress={() => router.push("/home")}>
+            <Text style={styles.continueButtonText}>Về trang chủ</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{catName}</Text>
-        <TouchableOpacity onPress={() => router.push("/home")} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Về trang chủ</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
+      <LinearGradient
+        colors={['#4caf50', '#388e3c']}
+        style={styles.header}
+      >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ChevronLeft color="#fff" size={28} strokeWidth={2.5} />
         </TouchableOpacity>
-      </View>
-      <View style={styles.productList}>
-        {items.length ? (
-          items.map(renderProduct)
-        ) : (
-          <Text style={styles.emptyText}>Chưa có sản phẩm trong danh mục này.</Text>
-        )}
-      </View>
-    </ScrollView>
+        <Text style={styles.headerTitle}>{catName}</Text>
+        <TouchableOpacity onPress={() => router.push("/cart")} style={styles.cartButton}>
+          <ShoppingCart color="#fff" size={24} strokeWidth={2} />
+        </TouchableOpacity>
+      </LinearGradient>
+      
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.productGrid}>
+          {items.length ? (
+            items.map(renderProduct)
+          ) : (
+            <View style={styles.emptyState}>
+              <AlertCircle color="#999" size={48} strokeWidth={1.5} />
+              <Text style={styles.emptyText}>Chưa có sản phẩm trong danh mục này</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 48,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  cartButton: {
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f8f9fa",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    padding: 32,
   },
-  header: {
-    padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  headerTitle: {
-    fontSize: 20,
+  emptyTitle: {
+    fontSize: 18,
     fontWeight: "700",
+    color: "#1a1a1a",
+    marginTop: 16,
+    marginBottom: 8,
   },
-  backButton: {
-    padding: 8,
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+    minHeight: 300,
   },
-  backButtonText: {
+  emptyText: {
     fontSize: 16,
-    color: "#007bff",
+    color: "#666",
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 24,
   },
-  productList: {
-    padding: 16,
+  mutedText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 12,
+  },
+  continueButton: {
+    marginTop: 20,
+    backgroundColor: "#4caf50",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  productGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    padding: 12,
     gap: 12,
   },
   productCard: {
-    width: "47%",
-    marginBottom: 12,
+    width: "48%",
     backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
+  },
+  productImage: {
+    width: "100%",
+    height: 160,
+    backgroundColor: "#f0f0f0",
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 20,
+    padding: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  productImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: 8,
+  productInfo: {
+    padding: 12,
+    paddingBottom: 8,
   },
   productName: {
     fontSize: 14,
-    fontWeight: "600",
-    marginTop: 8,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 6,
+    lineHeight: 18,
   },
   productPrice: {
-    fontSize: 12,
-    color: "#007bff",
-    marginVertical: 4,
+    fontSize: 15,
+    color: "#4caf50",
+    fontWeight: "700",
   },
-  addButton: {
-    padding: 8,
-    backgroundColor: "#007bff",
-    borderRadius: 8,
+  cardActions: {
+    padding: 12,
+    paddingTop: 0,
+  },
+  actionButton: {
+    paddingVertical: 10,
+    backgroundColor: "#4caf50",
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 4,
   },
-  addButtonText: {
+  actionText: {
     color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  detailButton: {
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#007bff",
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  detailButtonText: {
-    color: "#007bff",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 16,
+    fontWeight: "700",
+    fontSize: 13,
   },
 });

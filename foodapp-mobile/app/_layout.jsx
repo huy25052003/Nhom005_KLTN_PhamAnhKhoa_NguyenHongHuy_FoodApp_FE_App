@@ -32,6 +32,10 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
+            name="menu" 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
             name="product" 
             options={{ 
               title: "Sản phẩm",

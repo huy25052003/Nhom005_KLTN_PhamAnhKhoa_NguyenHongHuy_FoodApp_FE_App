@@ -130,13 +130,15 @@ export default function Favorites() {
                     handleToggleFavorite(p.id);
                   }}
                 >
-                  <Heart color="#ff6b6b" fill="#ff6b6b" size={20} strokeWidth={2} />
+                  <Heart color="#ff5252" fill="#ff5252" size={22} strokeWidth={2} />
                 </TouchableOpacity>
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={2}>
-                    {p.name}
-                  </Text>
-                  <Text style={styles.productPrice}>{formatVND(p.price)}</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productName} numberOfLines={2}>
+                      {p.name}
+                    </Text>
+                    <Text style={styles.productPrice}>{formatVND(p.price)}</Text>
+                  </View>
                 </View>
                 <TouchableOpacity
                   style={styles.addButton}
@@ -265,17 +267,14 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },

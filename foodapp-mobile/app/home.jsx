@@ -119,9 +119,11 @@ export default function Home() {
           strokeWidth={2} 
         />
       </TouchableOpacity>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{product.name}</Text>
-        <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
+      <View style={{ flex: 1 }}>
+        <View style={styles.productInfo}>
+          <Text style={styles.productName}>{product.name}</Text>
+          <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
+        </View>
       </View>
       <View style={styles.cardActions}>
         <TouchableOpacity
@@ -323,7 +325,7 @@ export default function Home() {
           <MessageCircle color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Tư vấn</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("category")}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("menu")}>
           <Utensils color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Menu</Text>
         </TouchableOpacity>
@@ -647,17 +649,14 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
