@@ -5,6 +5,7 @@ import { useLogin } from "../src/api/hooks";
 import { useAuth } from "../src/store/auth";
 import { LinearGradient } from 'expo-linear-gradient';
 import { LogIn, User, Lock, UserPlus } from 'lucide-react-native';
+import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const [username, setU] = useState("");
@@ -15,15 +16,40 @@ export default function Login() {
   const submit = async () => {
     try {
       const out = await login.mutateAsync({ username, password });
-      console.log("Login response:", out);
       await setAuth(out.user ?? null, out.token);
-      router.replace("/home");
+
+      // --- LOGIC PHÂN QUYỀN MỚI ---
+      let roles = [];
+      
+      // Cách 1: Nếu out.user có chứa roles
+      if (out.user?.roles) {
+        roles = out.user.roles;
+      } 
+      // Cách 2: Decode từ token (nếu out.user không có role)
+      else if (out.token) {
+        try {
+          const decoded = jwtDecode(out.token); // Cần cài: npm install jwt-decode
+          roles = decoded.roles || decoded.authorities || [];
+        } catch (e) {}
+      }
+
+      // Chuẩn hóa role về dạng string hoặc array để kiểm tra
+      const roleString = JSON.stringify(roles).toUpperCase();
+
+      if (roleString.includes("SHIPPER") || roleString.includes("KITCHEN")) {
+        // Nếu bạn muốn Shipper dùng chung app
+        router.replace("/shipper"); 
+      } else {
+        // Khách hàng bình thường
+        router.replace("/home");
+      }
+      // -----------------------------
+
     } catch (e) {
-      console.log("LOGIN ERR:", e?.message, e?.response?.status, e?.response?.data);
-      Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Đăng nhập thất bại");
+      console.log("LOGIN ERR:", e);
+      Alert.alert("Lỗi", "Đăng nhập thất bại");
     }
   };
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
