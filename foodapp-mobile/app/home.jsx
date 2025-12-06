@@ -8,7 +8,7 @@ import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon } from 'lucide-react-native';
+import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon, User } from 'lucide-react-native';
 
 const samplePlans = [
   { name: "Gói FIT 3 Trưa - Tối", desc: "Best seller", price: 650000, badge: "Best seller" },
@@ -175,41 +175,8 @@ export default function Home() {
         >
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.headerGreeting}>Xin chào!</Text>
-              <Text style={styles.headerTitle}>
-                {me?.username || user?.username || "Khách"}
-              </Text>
-            </View>
-            <View style={styles.headerActions}>
-              {user ? (
-                <>
-                  <TouchableOpacity 
-                    onPress={() => navigation.navigate("favorites")} 
-                    style={styles.headerIconButton}
-                  >
-                    <Heart color="#fff" size={24} strokeWidth={2} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleLogout} 
-                    style={styles.headerIconButton}
-                  >
-                    <LogOut color="#fff" size={24} strokeWidth={2} />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity 
-                  onPress={() => navigation.navigate("login")} 
-                  style={styles.headerLoginButton}
-                >
-                  <Text style={styles.headerLoginText}>Đăng nhập</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity 
-                onPress={() => navigation.navigate("cart")} 
-                style={styles.headerIconButton}
-              >
-                <ShoppingCart color="#fff" size={24} strokeWidth={2} />
-              </TouchableOpacity>
+              <Text style={styles.headerGreeting}>Home</Text>
+              <Text style={styles.headerTitle}>Banyuwangi, Jaya</Text>
             </View>
           </View>
         </LinearGradient>
@@ -328,6 +295,28 @@ export default function Home() {
         </TouchableOpacity>
       </View>
       </ScrollView>
+      
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem}>
+          <HomeIcon color="#ff6b6b" size={28} strokeWidth={2} fill="#ff6b6b" />
+          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <View style={styles.offersIconContainer}>
+            <Text style={styles.offersIcon}>🎁</Text>
+          </View>
+          <Text style={styles.navText}>Offers</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("category")}>
+          <Utensils color="#9e9e9e" size={28} strokeWidth={2} />
+          <Text style={styles.navText}>Menu</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("profile")}>
+          <User color="#9e9e9e" size={28} strokeWidth={2} />
+          <Text style={styles.navText}>Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -335,6 +324,46 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fa" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f8f9fa" },
+  
+  // Bottom Navigation
+  bottomNav: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  navText: {
+    fontSize: 12,
+    color: "#9e9e9e",
+    fontWeight: "500",
+  },
+  navTextActive: {
+    color: "#ff6b6b",
+    fontWeight: "700",
+  },
+  offersIconContainer: {
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  offersIcon: {
+    fontSize: 24,
+  },
   
   // New Header Styles
   header: {

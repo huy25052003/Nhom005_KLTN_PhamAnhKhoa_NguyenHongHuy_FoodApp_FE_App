@@ -124,7 +124,7 @@ export default function ChatbotWidget() {
   }, [isOpen, messages]);
 
   // Ẩn chatbot ở trang login và register
-  const hiddenRoutes = ['/login', '/register', '/index'];
+  const hiddenRoutes = ['/login', '/register', '/index', '/loginsms', '/changepassword', '/forgotpassword'];
   const shouldHide = hiddenRoutes.includes(pathname);
 
   if (shouldHide) {

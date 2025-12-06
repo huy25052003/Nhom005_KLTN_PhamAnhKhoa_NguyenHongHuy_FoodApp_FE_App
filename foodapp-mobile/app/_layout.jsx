@@ -65,6 +65,18 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
+            name="profile" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="editprofile" 
+            options={{ 
+              headerShown: false 
+            }} 
+          />
+          <Stack.Screen 
             name="shippinginfo" 
             options={{ 
               title: "Thông tin giao hàng",
