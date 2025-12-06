@@ -13,10 +13,14 @@ import {
 } from "react-native";
 import { useAuth } from "../store/auth";
 import { X, Send } from 'lucide-react-native';
-import { initConversation, getMessages, sendMessage as sendChatMessage } from "../api/chat";
+import { initConversation, getMessages } from "../api/chat";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+
+const WS_URL = "https://foodappsv.id.vn/ws";
 
 export default function AdminChatWidget({ onClose }) {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
@@ -24,8 +28,7 @@ export default function AdminChatWidget({ onClose }) {
   const [conversation, setConversation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const scrollViewRef = useRef(null);
-  const wsRef = useRef(null);
-  const pollingIntervalRef = useRef(null);
+  const stompClientRef = useRef(null);
 
   // Load user info and init conversation
   useEffect(() => {
@@ -36,7 +39,6 @@ export default function AdminChatWidget({ onClose }) {
 
     (async () => {
       try {
-        // Init or get conversation (includes user data)
         const convData = await initConversation();
         console.log("Conversation data:", convData);
         
@@ -47,15 +49,15 @@ export default function AdminChatWidget({ onClose }) {
         }
         
         setConversation(convData);
-        setCurrentUser(convData.customer); // Assuming conversation has customer info
+        setCurrentUser(convData.customer);
 
         // Load message history
         const msgData = await getMessages(convData.id);
         console.log("Message data:", msgData);
         setMessages(Array.isArray(msgData) ? msgData : []);
 
-        // Start polling for new messages
-        startPolling(convData.id);
+        // Connect WebSocket với SockJS
+        connectWebSocket(convData.id);
       } catch (error) {
         console.error("Error initializing chat:", error);
       } finally {
@@ -64,7 +66,7 @@ export default function AdminChatWidget({ onClose }) {
     })();
 
     return () => {
-      stopPolling();
+      disconnectWebSocket();
     };
   }, [token]);
 
@@ -75,27 +77,77 @@ export default function AdminChatWidget({ onClose }) {
     }, 100);
   }, [messages]);
 
-  const startPolling = (convId) => {
-    // Poll for new messages every 3 seconds
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        const msgData = await getMessages(convId);
-        setMessages(Array.isArray(msgData) ? msgData : []);
-      } catch (error) {
-        console.error("Error polling messages:", error);
-      }
-    }, 3000);
+  // Auto scroll to bottom
+  useEffect(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, [messages]);
+
+  const connectWebSocket = (convId) => {
+    if (stompClientRef.current) return;
+
+    try {
+      const client = new Client({
+        // Sử dụng SockJS giống như web
+        webSocketFactory: () => new SockJS(WS_URL),
+        connectHeaders: {
+          Authorization: `Bearer ${token}`
+        },
+        debug: (str) => {
+          console.log("STOMP:", str);
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: () => {
+          console.log("✅ WebSocket connected");
+          
+          // Subscribe to conversation topic
+          client.subscribe(`/topic/conversation/${convId}`, (message) => {
+            try {
+              const newMsg = JSON.parse(message.body);
+              console.log("📩 Received:", newMsg);
+              
+              setMessages(prev => {
+                // Tránh duplicate
+                if (prev.some(m => m.id === newMsg.id)) return prev;
+                return [...prev, newMsg];
+              });
+            } catch (error) {
+              console.error("Parse error:", error);
+            }
+          });
+        },
+        onStompError: (frame) => {
+          console.error("❌ STOMP error:", frame.headers.message);
+        },
+        onWebSocketError: (error) => {
+          console.error("❌ WebSocket error:", error);
+        },
+        onDisconnect: () => {
+          console.log("🔌 WebSocket disconnected");
+        }
+      });
+
+      client.activate();
+      stompClientRef.current = client;
+      console.log("🔄 Connecting WebSocket...");
+    } catch (error) {
+      console.error("❌ Connection error:", error);
+    }
   };
 
-  const stopPolling = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
+  const disconnectWebSocket = () => {
+    if (stompClientRef.current) {
+      stompClientRef.current.deactivate();
+      stompClientRef.current = null;
+      console.log("🔌 Disconnected");
     }
   };
 
   const sendMessage = async () => {
-    if (!inputText.trim() || !conversation || !currentUser) return;
+    if (!inputText.trim() || !stompClientRef.current || !conversation || !currentUser) return;
 
     const payload = {
       conversationId: conversation.id,
@@ -104,21 +156,22 @@ export default function AdminChatWidget({ onClose }) {
     };
 
     try {
-      const sentMsg = await sendChatMessage(payload);
-      setMessages(prev => {
-        // Avoid duplicates
-        if (prev.some(m => m.id === sentMsg.id)) return prev;
-        return [...prev, sentMsg];
+      // Gửi qua WebSocket
+      stompClientRef.current.publish({
+        destination: "/app/chat.sendMessage",
+        body: JSON.stringify(payload),
       });
+      
+      console.log("📤 Sent:", payload.content);
       setInputText("");
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.log("❌ Send error:", error);
     }
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    onClose?.();
+    if (onClose) onClose();
   };
 
   if (!isOpen) return null;
