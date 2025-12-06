@@ -3,10 +3,12 @@ import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIn
 import { useNavigation } from "expo-router";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
-import { getFeaturedProducts, getCategoriesPublic } from "../src/api/public";
+import { getCategoriesPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
 import { useMe } from "../src/api/hooks";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
+import { getRecommendations } from "../src/api/recommendations";
+import { getProfile } from "../src/api/user";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, LogOut, ShoppingCart, Utensils, Truck, Salad, Dumbbell, Home as HomeIcon, User, MessageCircle } from 'lucide-react-native';
 import AdminChatWidget from "../src/components/AdminChatWidget";
@@ -25,24 +27,46 @@ export default function Home() {
   const { count, setCount } = useCart();
   const navigation = useNavigation();
   const { data: me } = useMe();
-  const [products, setProducts] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [isAdminChatOpen, setIsAdminChatOpen] = useState(false);
+  const [appState, setAppState] = useState("LOADING"); // LOADING | NO_PROFILE | HAS_PROFILE | EMPTY
 
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const [prodRes, catRes, favRes] = await Promise.all([
-          getFeaturedProducts(8),
+        const [catRes, favRes] = await Promise.all([
           getCategoriesPublic(6),
           user ? getFavorites().catch(() => []) : Promise.resolve([]),
         ]);
-        setProducts(Array.isArray(prodRes) ? prodRes : []);
         setCategories(Array.isArray(catRes) ? catRes : []);
         setFavorites(Array.isArray(favRes) ? favRes : []);
+
+        // Check profile and get recommendations if user is logged in
+        if (user) {
+          try {
+            const userProfile = await getProfile().catch(() => null);
+            if (!userProfile || !userProfile.heightCm || !userProfile.weightKg) {
+              setAppState("NO_PROFILE");
+            } else {
+              const recs = await getRecommendations();
+              if (recs && recs.length > 0) {
+                setRecommended(recs);
+                setAppState("HAS_PROFILE");
+              } else {
+                setAppState("EMPTY");
+              }
+            }
+          } catch (e) {
+            console.error("Lỗi khi lấy recommendations:", e);
+            setAppState("NO_PROFILE");
+          }
+        } else {
+          setAppState("NO_PROFILE");
+        }
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu:", error);
       } finally {
@@ -180,7 +204,7 @@ export default function Home() {
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.headerGreeting}>Home</Text>
-              <Text style={styles.headerTitle}>Banyuwangi, Jaya</Text>
+              <Text style={styles.headerTitle}>HK AppFood</Text>
             </View>
             <TouchableOpacity 
               onPress={() => navigation.navigate("cart")} 
@@ -253,10 +277,100 @@ export default function Home() {
       </View>
 
       <View style={[styles.section, styles.sectionAlt]}>
-        <Text style={styles.sectionTitle}>Sản phẩm tiêu biểu</Text>
-        <View style={styles.grid4}>
-          {samplePlans.map(renderPlan)}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>🥗 Dành riêng cho bạn</Text>
+            <Text style={styles.sectionSubtitle}>
+              {appState === "HAS_PROFILE" 
+                ? "Thực đơn được tính toán dựa trên chỉ số cơ thể (TDEE) của bạn." 
+                : "Khám phá thực đơn healthy chuẩn khoa học."}
+            </Text>
+          </View>
+          {appState === "NO_PROFILE" && user && (
+            <TouchableOpacity 
+              style={styles.updateProfileButton}
+              onPress={() => navigation.navigate("editprofile")}
+            >
+              <Text style={styles.updateProfileText}>Cập nhật →</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {appState === "HAS_PROFILE" && recommended.length > 0 ? (
+          <View style={styles.productGrid}>
+            {recommended.map((product) => (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.productCard}
+                onPress={() => navigation.navigate("product", { id: product.id })}
+              >
+                <Image
+                  source={{ uri: product.imageUrl || "https://via.placeholder.com/150" }}
+                  style={styles.productImage}
+                />
+                <TouchableOpacity
+                  style={styles.favoriteButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(product.id);
+                  }}
+                >
+                  <Heart 
+                    color={isFavorite(product.id) ? "#ff5252" : "#9e9e9e"} 
+                    fill={isFavorite(product.id) ? "#ff5252" : "transparent"}
+                    size={22} 
+                    strokeWidth={2} 
+                  />
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.productInfo}>
+                    <View style={styles.productNameRow}>
+                      <Text style={styles.productName}>{product.name}</Text>
+                      {product.calories && (
+                        <View style={styles.caloriesBadge}>
+                          <Text style={styles.caloriesText}>{product.calories} kcal</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
+                  </View>
+                </View>
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleAddToCart(product)}
+                  >
+                    <Text style={styles.actionText}>Thêm vào giỏ</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : appState === "NO_PROFILE" && user ? (
+          <View style={styles.noProfileCard}>
+            <Text style={styles.noProfileIcon}>📊</Text>
+            <Text style={styles.noProfileTitle}>Bạn chưa cập nhật thông tin sức khỏe?</Text>
+            <Text style={styles.noProfileDesc}>Hãy cho chúng tôi biết Chiều cao, Cân nặng để tính toán Calo phù hợp nhất.</Text>
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={() => navigation.navigate("editprofile")}
+            >
+              <Text style={styles.buttonText}>Đi đến Hồ sơ cá nhân</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !user ? (
+          <View style={styles.noProfileCard}>
+            <Text style={styles.noProfileIcon}>🔐</Text>
+            <Text style={styles.noProfileTitle}>Đăng nhập để xem gợi ý</Text>
+            <Text style={styles.noProfileDesc}>Đăng nhập để nhận được thực đơn phù hợp với cơ thể bạn.</Text>
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={() => navigation.navigate("login")}
+            >
+              <Text style={styles.buttonText}>Đăng nhập ngay</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
 
       {!!categories.length && (
@@ -267,17 +381,6 @@ export default function Home() {
           </View>
         </View>
       )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Món được yêu thích</Text>
-        <View style={styles.grid4}>
-          {products.length ? (
-            products.map(renderProduct)
-          ) : (
-            <Text style={styles.mutedText}>Chưa có dữ liệu sản phẩm.</Text>
-          )}
-        </View>
-      </View>
 
       <View style={[styles.section, styles.sectionAlt]}>
         <View style={styles.grid3}>
@@ -316,7 +419,7 @@ export default function Home() {
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <HomeIcon color="#ff6b6b" size={24} strokeWidth={2} fill="#ff6b6b" />
-          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
+          <Text style={[styles.navText, styles.navTextActive]}>Trang chủ</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -327,11 +430,11 @@ export default function Home() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("menu")}>
           <Utensils color="#9e9e9e" size={24} strokeWidth={2} />
-          <Text style={styles.navText}>Menu</Text>
+          <Text style={styles.navText}>Thực đơn</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("profile")}>
           <User color="#9e9e9e" size={24} strokeWidth={2} />
-          <Text style={styles.navText}>Profile</Text>
+          <Text style={styles.navText}>Hồ sơ</Text>
         </TouchableOpacity>
       </View>
 
@@ -537,6 +640,79 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#1a1a1a",
     marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  updateProfileButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#4caf50",
+    borderRadius: 8,
+  },
+  updateProfileText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  productGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  productNameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 6,
+  },
+  caloriesBadge: {
+    backgroundColor: "#dcfce7",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+    marginLeft: 4,
+  },
+  caloriesText: {
+    color: "#166534",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  noProfileCard: {
+    backgroundColor: "#fff",
+    padding: 24,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#bbf7d0",
+    borderStyle: "dashed",
+  },
+  noProfileIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  noProfileTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  noProfileDesc: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 20,
   },
   
   // How-to Grid

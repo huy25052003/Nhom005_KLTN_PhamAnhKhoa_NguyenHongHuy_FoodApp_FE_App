@@ -14,9 +14,13 @@ import {
   Sandwich,
   ChefHat,
   Utensils,
-  AlertCircle 
+  AlertCircle,
+  MessageCircle,
+  Home as HomeIcon,
+  User 
 } from 'lucide-react-native';
 import { useCart } from "../src/store/cart";
+import AdminChatWidget from "../src/components/AdminChatWidget";
 
 // Icon map cho từng loại danh mục
 const getCategoryIcon = (categoryName) => {
@@ -36,6 +40,7 @@ export default function Menu() {
   const { count } = useCart();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAdminChatOpen, setIsAdminChatOpen] = useState(false);
 
   useEffect(() => {
     let stop = false;
@@ -161,7 +166,34 @@ export default function Menu() {
             </View>
           )}
         </View>
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/home")}>
+          <HomeIcon color="#9e9e9e" size={24} strokeWidth={2} />
+          <Text style={styles.navText}>Trang chủ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setIsAdminChatOpen(true)}
+        >
+          <MessageCircle color="#9e9e9e" size={24} strokeWidth={2} />
+          <Text style={styles.navText}>Tư vấn</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Utensils color="#ff6b6b" size={24} strokeWidth={2} fill="#ff6b6b" />
+          <Text style={[styles.navText, styles.navTextActive]}>Thực đơn</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/profile")}>
+          <User color="#9e9e9e" size={24} strokeWidth={2} />
+          <Text style={styles.navText}>Hồ sơ</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Admin Chat Widget */}
+      {isAdminChatOpen && <AdminChatWidget onClose={() => setIsAdminChatOpen(false)} />}
     </View>
   );
 }
@@ -315,5 +347,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 12,
     lineHeight: 24,
+  },
+  bottomNav: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  navText: {
+    fontSize: 12,
+    color: "#9e9e9e",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  navTextActive: {
+    color: "#ff6b6b",
+    fontWeight: "700",
   },
 });

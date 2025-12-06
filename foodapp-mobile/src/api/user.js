@@ -13,17 +13,35 @@ function decodeFromToken() {
 }
 
 export async function getMe() {
-  try { return (await api.get("users/me")).data; } catch {}
-  try { return (await api.get("auth/me")).data; } catch {}
+  try { return (await api.get("api/users/me")).data; } catch {}
+  try { return (await api.get("api/auth/me")).data; } catch {}
   return decodeFromToken();
 }
 
 export async function getProfile() {
-  const res = await api.get("users/me/profile"); 
+  const res = await api.get("api/users/me/profile"); 
   return res.data;
 }
 
 export async function updateProfile(payload) {
-  const res = await api.patch("users/me/profile", payload);
-  return res.data;
+  try {
+    console.log("Calling PATCH api/users/me/profile with payload:", payload);
+    const res = await api.patch("api/users/me/profile", payload);
+    console.log("PATCH response:", res.data);
+    return res.data;
+  } catch (patchError) {
+    console.log("PATCH failed, trying PUT instead:", patchError.response?.status);
+    // Try PUT if PATCH fails
+    try {
+      const res = await api.put("api/users/me/profile", payload);
+      console.log("PUT response:", res.data);
+      return res.data;
+    } catch (putError) {
+      console.error("Both PATCH and PUT failed:", {
+        patch: patchError.response?.data,
+        put: putError.response?.data
+      });
+      throw putError;
+    }
+  }
 }

@@ -1,26 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, ScrollView, Picker } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, ScrollView, Picker, Platform } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Mail, Phone, MapPin, ArrowLeft, Save, Activity, Heart, Target } from 'lucide-react-native';
+import { User, Mail, Phone, MapPin, ArrowLeft, Save, Activity, Heart, Target, Calendar } from 'lucide-react-native';
 import { Picker as RNPicker } from '@react-native-picker/picker';
-import { useMe } from "../src/api/hooks";
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyShipping, upsertMyShipping } from "../src/api/shipping";
-import { getProfile, updateProfile } from "../src/api/user";
+import { getProfile, updateProfile, getMe } from "../src/api/user";
 import { useAuth } from "../src/store/auth";
 
 const API_HOST = "https://esgoo.net/api-tinhthanh-new";
 
 export default function EditProfile() {
-  const { data: me, refetch } = useMe();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   
+  // Load user data using getMe instead of useMe hook
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+    enabled: !!token,
+  });
+  
   // Thông tin tài khoản & cá nhân
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [gender, setGender] = useState("MALE");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,8 +41,6 @@ export default function EditProfile() {
   
   // Shipping info
   const [shippingPhone, setShippingPhone] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [shippingCity, setShippingCity] = useState("");
   const [shippingNote, setShippingNote] = useState("");
   
   // Province & Ward data
@@ -60,15 +65,30 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (me) {
+      console.log("Me data:", me);
       setEmail(me.email || "");
       setPhone(me.phone || "");
+      // Set fullName from me
+      if (me.fullName) {
+        setFullName(me.fullName);
+      }
     }
   }, [me]);
 
   useEffect(() => {
     if (profileData) {
-      setFullName(profileData.fullName || "");
-      setBirthDate(profileData.birthDate || "");
+      console.log("Profile data:", profileData);
+      if (profileData.fullName) {
+        setFullName(profileData.fullName);
+      }
+      if (profileData.birthDate) {
+        setBirthDate(profileData.birthDate);
+      }
+      // Set phone from profile if available
+      if (profileData.phone) {
+        console.log("Setting phone from profile:", profileData.phone);
+        setPhone(profileData.phone);
+      }
       setGender(profileData.gender || "MALE");
       setHeightCm(profileData.heightCm?.toString() || "");
       setWeightKg(profileData.weightKg?.toString() || "");
@@ -81,11 +101,14 @@ export default function EditProfile() {
   useEffect(() => {
     if (shippingData) {
       setShippingPhone(shippingData.phone || phone || "");
-      setShippingAddress(shippingData.addressLine || "");
-      setShippingCity(shippingData.city || "");
       setShippingNote(shippingData.note || "");
+      
+      // Parse addressLine to extract houseNumber (just keep the full address for now)
+      if (shippingData.addressLine) {
+        setHouseNumber(shippingData.addressLine);
+      }
     }
-  }, [shippingData]);
+  }, [shippingData, phone]);
 
   // Load provinces on mount
   useEffect(() => {
@@ -114,11 +137,15 @@ export default function EditProfile() {
 
   // Calculate TDEE
   const calculateTDEE = () => {
-    if (!heightCm || !weightKg || !birthDate) return 0;
+    if (!heightCm || !weightKg) return 0;
     
     const h = Number(heightCm);
     const w = Number(weightKg);
-    const age = new Date().getFullYear() - new Date(birthDate).getFullYear();
+    // Calculate age from birthDate or use default
+    let age = 25;
+    if (birthDate) {
+      age = new Date().getFullYear() - new Date(birthDate).getFullYear();
+    }
     
     let bmr = (10 * w) + (6.25 * h) - (5 * age);
     bmr += (gender === "MALE" ? 5 : -161);
@@ -134,10 +161,16 @@ export default function EditProfile() {
   const estimatedTDEE = calculateTDEE();
 
   const handleSaveAll = async () => {
+    // Validation
+    if (!fullName || !fullName.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập họ tên");
+      return;
+    }
+
     setLoading(true);
     try {
       // Save profile
-      console.log("Saving profile data:", {
+      const profilePayload = {
         fullName: fullName.trim(),
         birthDate: birthDate || null,
         gender: gender,
@@ -146,54 +179,71 @@ export default function EditProfile() {
         activityLevel: activityLevel,
         goal: goal,
         targetCalories: targetCalories ? Number(targetCalories) : null,
-      });
+      };
       
-      await updateProfile({
-        fullName: fullName.trim(),
-        birthDate: birthDate || null,
-        gender: gender,
-        heightCm: heightCm ? Number(heightCm) : null,
-        weightKg: weightKg ? Number(weightKg) : null,
-        activityLevel: activityLevel,
-        goal: goal,
-        targetCalories: targetCalories ? Number(targetCalories) : null,
-      });
+      console.log("Saving profile data:", profilePayload);
+      
+      const profileResult = await updateProfile(profilePayload);
+      console.log("Profile saved successfully:", profileResult);
 
-      // Save shipping if has data
-      let addressToSave = houseNumber.trim();
-      if (selectedProvinceId && selectedWardId) {
+      // Save shipping - same logic as web
+      let addressToSave = houseNumber?.trim() || "";
+      
+      // Only construct full address if all required fields are present
+      if (selectedProvinceId && selectedWardId && addressToSave) {
         const pName = provinces.find(p => p.id === selectedProvinceId)?.full_name;
         const wName = wards.find(w => w.id === selectedWardId)?.full_name;
-        addressToSave = `${houseNumber.trim()}, ${wName}, ${pName}`;
+        addressToSave = `${addressToSave}, ${wName}, ${pName}`;
       }
       
+      // Only save shipping if we have a valid address
       if (addressToSave) {
-        console.log("Saving shipping data:", {
-          phone: shippingPhone.trim() || phone,
-          addressLine: addressToSave,
-          city: provinces.find(p => p.id === selectedProvinceId)?.full_name || "Vietnam",
-          note: shippingNote.trim(),
-        });
-        
-        await upsertMyShipping({
-          phone: shippingPhone.trim() || phone,
-          addressLine: addressToSave,
-          city: provinces.find(p => p.id === selectedProvinceId)?.full_name || "Vietnam",
-          note: shippingNote.trim(),
-        });
+        try {
+          const shippingPayload = {
+            phone: shippingPhone?.trim() || phone,
+            addressLine: addressToSave,
+            city: provinces.find(p => p.id === selectedProvinceId)?.full_name || "Vietnam",
+            note: shippingNote?.trim() || "",
+          };
+          
+          console.log("Saving shipping data:", shippingPayload);
+          
+          const shippingResult = await upsertMyShipping(shippingPayload);
+          console.log("Shipping saved successfully:", shippingResult);
+        } catch (shippingError) {
+          // Log but don't fail the whole save operation
+          console.warn("Failed to save shipping (non-critical):", shippingError);
+        }
       }
 
       Alert.alert("Thành công", "Đã lưu tất cả thông tin!", [
         { text: "OK", onPress: () => {
-          refetch();
+          queryClient.invalidateQueries({ queryKey: ["me"] });
           queryClient.invalidateQueries({ queryKey: ["profile"] });
           queryClient.invalidateQueries({ queryKey: ["shipping"] });
+          router.back();
         }}
       ]);
     } catch (error) {
       console.error("Save error:", error);
-      console.error("Error response:", error?.response?.data);
-      Alert.alert("Lỗi", error?.response?.data?.message || error?.message || "Không thể lưu thông tin");
+      console.error("Error details:", {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        stack: error?.stack
+      });
+      
+      let errorMessage = "Không thể lưu thông tin";
+      
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert("Lỗi", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -222,30 +272,29 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.halfInput}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Email..."
-                  placeholderTextColor="#999"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-              <View style={styles.halfInput}>
-                <Text style={styles.label}>Số điện thoại</Text>
-                <TextInput
-                  style={styles.input}
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="09..."
-                  placeholderTextColor="#999"
-                  keyboardType="phone-pad"
-                />
-              </View>
+            <View>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email..."
+                placeholderTextColor="#999"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View>
+              <Text style={styles.label}>Số điện thoại</Text>
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="09..."
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+              />
             </View>
 
             <View>
@@ -272,13 +321,30 @@ export default function EditProfile() {
             <View style={styles.row}>
               <View style={styles.halfInput}>
                 <Text style={styles.label}>Ngày sinh</Text>
-                <TextInput
-                  style={styles.input}
-                  value={birthDate}
-                  onChangeText={setBirthDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#999"
-                />
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Calendar color="#666" size={18} strokeWidth={2} />
+                  <Text style={styles.dateButtonText}>
+                    {birthDate || "Chọn ngày sinh"}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={birthDate ? new Date(birthDate) : new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (selectedDate) {
+                        const formattedDate = selectedDate.toISOString().split('T')[0];
+                        setBirthDate(formattedDate);
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
+                )}
               </View>
               <View style={styles.halfInput}>
                 <Text style={styles.label}>Giới tính</Text>
@@ -727,5 +793,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    gap: 8,
+  },
+  dateButtonText: {
+    fontSize: 15,
+    color: "#333",
   },
 });

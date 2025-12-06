@@ -1,14 +1,80 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../src/store/auth";
-import { useMe } from "../src/api/hooks";
+import { useQuery } from "@tanstack/react-query";
+import { getProfile, getMe } from "../src/api/user";
+import { getMyShipping } from "../src/api/shipping";
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, MapPin, Lock, Heart, ShoppingBag, LogOut, ChevronRight, Settings } from 'lucide-react-native';
+import { User, MapPin, Lock, Heart, ShoppingBag, LogOut, ChevronRight, Edit, Award, Activity } from 'lucide-react-native';
 
 export default function Profile() {
-  const { user, clear } = useAuth();
-  const { data: me } = useMe();
+  const { user, token, clear } = useAuth();
+  
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+    enabled: !!token,
+  });
+
+  const { data: profileData } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+    enabled: !!token,
+  });
+
+  const { data: shippingData } = useQuery({
+    queryKey: ["shipping"],
+    queryFn: getMyShipping,
+    enabled: !!token,
+  });
+
+  // Calculate membership info
+  const membershipInfo = useMemo(() => {
+    const points = me?.points || 0;
+    let rank = "Đồng";
+    let icon = "🌱";
+    let discount = "1%";
+    
+    if (points >= 2000) {
+      rank = "Kim Cương";
+      icon = "💎";
+      discount = "10%";
+    } else if (points >= 500) {
+      rank = "Vàng";
+      icon = "🥇";
+      discount = "5%";
+    } else if (points >= 100) {
+      rank = "Bạc";
+      icon = "🥈";
+      discount = "3%";
+    }
+    
+    return { rank, icon, discount, points };
+  }, [me?.points]);
+
+  // Calculate TDEE
+  const estimatedTDEE = useMemo(() => {
+    if (!profileData?.heightCm || !profileData?.weightKg) return 0;
+
+    const h = Number(profileData.heightCm);
+    const w = Number(profileData.weightKg);
+    let age = 25;
+    
+    if (profileData.birthDate) {
+      age = new Date().getFullYear() - new Date(profileData.birthDate).getFullYear();
+    }
+    
+    let bmr = (10 * w) + (6.25 * h) - (5 * age);
+    bmr += (profileData.gender === "MALE" ? 5 : -161);
+
+    const multipliers = { "SEDENTARY": 1.2, "LIGHT": 1.375, "MODERATE": 1.55, "ACTIVE": 1.725 };
+    const maintenance = Math.round(bmr * (multipliers[profileData.activityLevel] || 1.2));
+
+    if (profileData.goal === "LOSE") return Math.max(1200, maintenance - 500);
+    if (profileData.goal === "GAIN") return maintenance + 500;
+    return maintenance;
+  }, [profileData]);
 
   const handleLogout = () => {
     clear();
@@ -79,19 +145,6 @@ export default function Profile() {
               title="Món yêu thích" 
               onPress={() => router.push("/favorites")}
               color="#f44336"
-            />
-          </View>
-        </View>
-
-        {/* Cài đặt */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Khác</Text>
-          <View style={styles.menuContainer}>
-            <MenuItem 
-              icon={Settings} 
-              title="Cài đặt" 
-              onPress={() => {}}
-              color="#607d8b"
             />
           </View>
         </View>
