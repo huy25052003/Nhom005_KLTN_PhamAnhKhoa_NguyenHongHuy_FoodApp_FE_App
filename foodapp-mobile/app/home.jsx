@@ -206,18 +206,6 @@ export default function Home() {
               <Text style={styles.headerGreeting}>Home</Text>
               <Text style={styles.headerTitle}>HK AppFood</Text>
             </View>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("cart")} 
-              style={styles.cartButton}
-            >
-              <ShoppingCart color="#fff" size={26} strokeWidth={2} />
-              {/* Badge số lượng sản phẩm */}
-              {count > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{count}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -428,10 +416,22 @@ export default function Home() {
           <MessageCircle color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Tư vấn</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("cart")}>
+          <View style={{ position: 'relative' }}>
+            <ShoppingCart color="#9e9e9e" size={24} strokeWidth={2} />
+            {count > 0 && (
+              <View style={styles.navCartBadge}>
+                <Text style={styles.navCartBadgeText}>{count}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.navText}>Giỏ hàng</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("menu")}>
           <Utensils color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Thực đơn</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("profile")}>
           <User color="#9e9e9e" size={24} strokeWidth={2} />
           <Text style={styles.navText}>Hồ sơ</Text>
@@ -476,6 +476,23 @@ const styles = StyleSheet.create({
   },
   navTextActive: {
     color: "#ff6b6b",
+    fontWeight: "700",
+  },
+  navCartBadge: {
+    position: "absolute",
+    top: -6,
+    right: -8,
+    backgroundColor: "#ff5252",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  navCartBadgeText: {
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "700",
   },
   offersIconContainer: {
@@ -907,6 +924,43 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   ctaText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  
+  // Floating Cart Button
+  floatingCartButton: {
+    position: "absolute",
+    bottom: 80,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#4caf50",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingCartBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#ff5252",
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  floatingCartBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   
   // Misc
   mutedText: {
