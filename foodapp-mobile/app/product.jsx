@@ -163,6 +163,32 @@ export default function Product() {
           <Text style={styles.ratingText}>({reviews.length} đánh giá)</Text>
         </View>
         <Text style={styles.productPrice}>{formatVND(product.price)}</Text>
+        
+        {/* Thông tin dinh dưỡng */}
+        {product.calories > 0 && (
+          <View style={styles.nutritionCard}>
+            <Text style={styles.nutritionTitle}>Thông tin dinh dưỡng <Text style={styles.nutritionSubtitle}>(/phần)</Text></Text>
+            <View style={styles.nutritionGrid}>
+              <View style={styles.nutritionItem}>
+                <Text style={[styles.nutritionValue, {color: '#ea580c'}]}>{product.calories}</Text>
+                <Text style={styles.nutritionLabel}>Kcal</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={[styles.nutritionValue, {color: '#3b82f6'}]}>{product.protein || 0}g</Text>
+                <Text style={styles.nutritionLabel}>Protein</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={[styles.nutritionValue, {color: '#eab308'}]}>{product.carbs || 0}g</Text>
+                <Text style={styles.nutritionLabel}>Carbs</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={[styles.nutritionValue, {color: '#8b5cf6'}]}>{product.fat || 0}g</Text>
+                <Text style={styles.nutritionLabel}>Fat</Text>
+              </View>
+            </View>
+          </View>
+        )}
+        
         <Text style={styles.productDesc}>{product.description || "Không có mô tả."}</Text>
       </View>
       <View style={styles.section}>
@@ -478,5 +504,44 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     marginVertical: 12,
+  },
+  nutritionCard: {
+    backgroundColor: "#f8f9fa",
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  nutritionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#495057",
+    marginBottom: 12,
+  },
+  nutritionSubtitle: {
+    fontSize: 11,
+    fontWeight: "400",
+    color: "#868e96",
+  },
+  nutritionGrid: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  nutritionItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  nutritionValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  nutritionLabel: {
+    fontSize: 11,
+    color: "#868e96",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });
