@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { getCategoryProducts, getCategoriesPublic } from "../src/api/public";
+import { getCategoryProducts, getCategoriesPublic, getProductsPublic } from "../src/api/public";
 import { addToCart, getCart } from "../src/api/cart";
 import { getFavorites, toggleFavorite } from "../src/api/favorites";
 import { useAuth } from "../src/store/auth";
@@ -30,16 +30,29 @@ export default function Category() {
       }
       setLoading(true);
       try {
-        const [cats, products, favRes] = await Promise.all([
+        // Xử lý "all" để lấy tất cả sản phẩm
+        let products;
+        if (id === "all") {
+          products = await getProductsPublic({ limit: 100 }).catch(() => []);
+        } else {
+          products = await getCategoryProducts(id, 80).catch(() => []);
+        }
+
+        const [cats, favRes] = await Promise.all([
           getCategoriesPublic(100).catch(() => []),
-          getCategoryProducts(id, 80),
           user ? getFavorites().catch(() => []) : Promise.resolve([]),
         ]);
+
         if (!stop) {
           setItems(Array.isArray(products) ? products : []);
           setFavorites(Array.isArray(favRes) ? favRes : []);
-          const cat = (cats || []).find((c) => String(c.id) === String(id));
-          setCatName(cat?.name || `Danh mục #${id}`);
+          
+          if (id === "all") {
+            setCatName("Tất cả món ăn");
+          } else {
+            const cat = (cats || []).find((c) => String(c.id) === String(id));
+            setCatName(cat?.name || `Danh mục #${id}`);
+          }
         }
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu:", error);

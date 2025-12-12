@@ -157,6 +157,25 @@ export default function Menu() {
         </View>
 
         <View style={styles.categoryGrid}>
+          {/* Danh mục Tất cả món ăn */}
+          <TouchableOpacity
+            style={[styles.categoryCard, styles.allCategoryCard]}
+            onPress={() => router.push(`/category?id=all`)}
+          >
+            <LinearGradient
+              colors={['#4caf50', '#4caf50']}
+              style={styles.categoryImagePlaceholder}
+            >
+              <Utensils color="#fff" size={40} strokeWidth={2} />
+            </LinearGradient>
+            <View style={styles.categoryInfo}>
+              <Text style={[styles.categoryName, styles.allCategoryText]}>Tất cả món ăn</Text>
+            </View>
+            <View style={styles.categoryArrow}>
+              <ChevronLeft color="#388e3c" size={20} strokeWidth={2.5} style={{ transform: [{ rotate: '180deg' }] }} />
+            </View>
+          </TouchableOpacity>
+
           {categories.length ? (
             categories.map(renderCategory)
           ) : (
@@ -289,6 +308,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
+  allCategoryCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    shadowColor: "#ff6b6b",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   categoryImageContainer: {
     position: "relative",
   },
@@ -325,6 +352,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#666",
     lineHeight: 18,
+  },
+  allCategoryText: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  allCategoryDescription: {
+    color: "#ff6b6b",
+    fontWeight: "600",
   },
   categoryArrow: {
     position: "absolute",
