@@ -1,44 +1,84 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { 
   View, Text, FlatList, TouchableOpacity, StyleSheet, 
   Alert, RefreshControl, StatusBar, Linking, Platform 
 } from "react-native";
 import { useFocusEffect, router } from "expo-router";
-import { useAuth } from "../../src/store/auth";
-import { getShipperOrders, pickUpOrder, completeOrder } from "../../src/api/shipper";
-import { LogOut, MapPin, Phone, Package, Navigation, User } from "lucide-react-native";
+import { useAuth } from "../../src/store/auth"; 
+// Thay thế pickUpOrder bằng completeOrder vì bạn muốn chuyển thẳng sang DONE
+import { getShipperOrders, completeOrder } from "../../src/api/shipper"; 
+import { LogOut, MapPin, Phone, Package, User, Navigation } from "lucide-react-native";
+import io from 'socket.io-client';
+
+// Sử dụng URL Socket được cung cấp
+const SOCKET_URL = "https://foodappsv.id.vn/ws"; 
 
 export default function ShipperDashboard() {
-  const [activeTab, setActiveTab] = useState("NEW"); // NEW: Chờ nhận | MY: Đang giao
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  const setAuth = useAuth((s) => s.setAuth);
+  const auth = useAuth(s => s.auth);
+  const setAuth = useAuth(s => s.setAuth);
+  
+  // Trạng thái đơn hàng cần lấy: DELIVERING (Sẵn sàng giao, không cần nhận)
+  const STATUS_TO_FETCH = "DELIVERING";
 
-  // 1. Load dữ liệu từ API
-  const fetchData = async () => {
+  // Đảm bảo fetchData là một hàm ổn định (stable function)
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // NEW -> Lấy CONFIRMED (đã xác nhận/nấu xong)
-      // MY -> Lấy DELIVERING (đang giao)
-      const status = activeTab === "NEW" ? "CONFIRMED" : "DELIVERING";
-      const data = await getShipperOrders(status);
+      const data = await getShipperOrders(STATUS_TO_FETCH);
       
-      // Lọc lại client-side cho chắc chắn
-      const filtered = (Array.isArray(data) ? data : []).filter(o => o.status === status);
-      setOrders(filtered.reverse()); // Đảo ngược để thấy đơn mới nhất
+      const filtered = (Array.isArray(data) ? data : []).filter(o => o.status === STATUS_TO_FETCH);
+      setOrders(filtered.reverse());
     } catch (e) {
-      console.log("Shipper fetch error:", e);
+      // console.log("Shipper fetch error:", e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [setOrders, setLoading]);
 
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [activeTab])
+    }, [fetchData])
   );
+
+  // --- LOGIC SOCKET NHẬN ĐƠN HÀNG FDelivering ---
+  useEffect(() => {
+    if (!auth?.token) return;
+    
+    const socket = io(SOCKET_URL, {
+      extraHeaders: {
+        Authorization: `Bearer ${auth.token}`
+      },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      // console.log("Socket connected:", socket.id);
+    });
+
+    // SỬA: Tải lại dữ liệu ngay lập tức khi nhận được đơn mới
+    socket.on('FDelivering', (order) => {
+      if (order.status === STATUS_TO_FETCH) {
+        // Tự động tải lại danh sách đơn hàng để cập nhật UI
+        fetchData(); 
+        
+        // Chỉ hiện thông báo, không chặn luồng fetch
+        Alert.alert("Đơn hàng mới!", `Đơn hàng #${order.id} vừa được thêm vào danh sách cần giao.`);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      // console.log("Socket disconnected");
+    });
+    
+    return () => {
+      socket.disconnect();
+    };
+  }, [auth?.token, fetchData]);
+  // --- KẾT THÚC LOGIC SOCKET ---
 
   const handleLogout = () => {
     Alert.alert("Đăng xuất", "Bạn muốn đăng xuất?", [
@@ -47,17 +87,17 @@ export default function ShipperDashboard() {
     ]);
   };
 
-  // 2. Chức năng Gọi điện
+  // Chức năng Gọi điện
   const handleCall = (phone) => {
-    if (!phone) return Alert.alert("Lỗi", "Không có số điện thoại khách hàng");
+    if (!phone) return Alert.alert("Lỗi", "Không có số điện thoại khách hàng.");
     let p = phone.replace(/[^\d+]/g, ''); 
     Linking.openURL(`tel:${p}`);
   };
 
-  // 3. Chức năng Mở Bản đồ
+  // Chức năng Mở Bản đồ
   const handleMap = (address) => {
     if (!address || address === "Đến cửa hàng lấy thông tin") {
-      return Alert.alert("Lỗi", "Không có địa chỉ giao hàng cụ thể");
+      return Alert.alert("Lỗi", "Không có địa chỉ giao hàng cụ thể.");
     }
     const query = encodeURIComponent(address);
     const scheme = Platform.select({
@@ -71,38 +111,31 @@ export default function ShipperDashboard() {
       return Linking.openURL(webUrl);
     }).catch(() => Linking.openURL(webUrl));
   };
-
-  // 4. Xử lý Hành động (Nhận đơn / Hoàn tất)
-  const onAction = async (item) => {
-    try {
-      if (activeTab === "NEW") {
-        await pickUpOrder(item.id);
-        Alert.alert("Thành công", "Đã nhận đơn hàng! Chuyển sang tab Đang giao.");
-        setActiveTab("MY");
-      } else {
-        Alert.alert("Xác nhận", "Đã giao hàng và nhận tiền thành công?", [
-          { text: "Chưa", style: "cancel" },
-          { 
-            text: "Đã giao xong", 
-            onPress: async () => {
-              await completeOrder(item.id);
-              fetchData(); // Reload lại danh sách
-            }
+  
+  // Xử lý hành động "Hoàn thành đơn" (chuyển từ DELIVERING -> DONE)
+  const onComplete = (item) => {
+    Alert.alert("Xác nhận hoàn tất", "Bạn đã giao hàng và nhận tiền thành công?", [
+      { text: "Chưa", style: "cancel" },
+      { 
+        text: "Đã giao xong", 
+        onPress: async () => {
+          try {
+            await completeOrder(item.id);
+            Alert.alert("Thành công", "Đơn hàng đã hoàn tất.");
+            fetchData(); // Reload lại danh sách (sẽ không còn đơn này)
+          } catch (e) {
+            Alert.alert("Lỗi", e?.response?.data?.message || e?.message || "Thao tác thất bại. Vui lòng thử lại.");
           }
-        ]);
+        }
       }
-    } catch (e) {
-      Alert.alert("Lỗi", "Thao tác thất bại. Vui lòng thử lại.");
-    }
+    ]);
   };
 
   const renderItem = ({ item }) => {
-    // Lấy thông tin hiển thị an toàn
     const shipInfo = item.shipping || {};
     const customerName = item.user?.username || "Khách hàng";
     const phone = shipInfo.phone || item.user?.phone || "";
     
-    // Xử lý địa chỉ: Ưu tiên dùng addressLine đầy đủ
     let address = shipInfo.addressLine || "";
     if (shipInfo.city && !address.includes(shipInfo.city)) {
         address += `, ${shipInfo.city}`;
@@ -111,7 +144,6 @@ export default function ShipperDashboard() {
 
     return (
       <View style={styles.card}>
-        {/* Header Card */}
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.orderId}>Đơn #{item.id}</Text>
@@ -125,11 +157,16 @@ export default function ShipperDashboard() {
 
         <View style={styles.divider} />
 
-        {/* Thông tin Giao hàng */}
         <View style={styles.cardBody}>
           <View style={styles.row}>
             <User size={18} color="#666" style={{marginTop: 2}} />
             <Text style={styles.customerName}>{customerName}</Text>
+          </View>
+          
+          {/* Hiển thị SĐT và Địa chỉ chi tiết */}
+          <View style={styles.row}>
+            <Phone size={18} color="#4caf50" style={{marginTop: 2}} />
+            <Text style={styles.addressText}>{phone || 'Chưa có SĐT'}</Text>
           </View>
 
           <View style={styles.row}>
@@ -144,10 +181,9 @@ export default function ShipperDashboard() {
             </Text>
           </View>
         </View>
-
-        {/* Các nút gọi điện / chỉ đường (chỉ hiện khi đang giao) */}
-        {activeTab === "MY" && (
-          <View style={styles.actionRow}>
+        
+        {/* Nút Gọi điện và Chỉ đường */}
+        <View style={styles.actionRow}>
             <TouchableOpacity style={styles.iconBtn} onPress={() => handleCall(phone)}>
               <Phone size={20} color="#fff" />
               <Text style={styles.iconBtnText}>Gọi điện</Text>
@@ -157,20 +193,14 @@ export default function ShipperDashboard() {
               <Navigation size={20} color="#fff" />
               <Text style={styles.iconBtnText}>Chỉ đường</Text>
             </TouchableOpacity>
-          </View>
-        )}
+        </View>
 
-        {/* Nút hành động chính */}
+        {/* Nút hành động chính: Giao hàng thành công */}
         <TouchableOpacity 
-          style={[
-            styles.mainBtn, 
-            activeTab === "NEW" ? styles.btnGreen : styles.btnOrange
-          ]}
-          onPress={() => onAction(item)}
+          style={[styles.mainBtn, styles.btnOrange]}
+          onPress={() => onComplete(item)}
         >
-          <Text style={styles.mainBtnText}>
-            {activeTab === "NEW" ? "NHẬN ĐƠN NÀY" : "XÁC NHẬN HOÀN TẤT"}
-          </Text>
+          <Text style={styles.mainBtnText}>GIAO HÀNG THÀNH CÔNG</Text>
         </TouchableOpacity>
       </View>
     );
@@ -182,30 +212,9 @@ export default function ShipperDashboard() {
       
       {/* App Bar */}
       <View style={styles.appBar}>
-        <Text style={styles.appTitle}>Tài Xế FoodApp 🛵</Text>
+        <Text style={styles.appTitle}>Đơn hàng cần giao ({orders.length}) 🛵</Text>
         <TouchableOpacity onPress={handleLogout}>
           <LogOut color="#fff" size={24} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === "NEW" && styles.activeTab]} 
-          onPress={() => setActiveTab("NEW")}
-        >
-          <Text style={[styles.tabText, activeTab === "NEW" && styles.activeTabText]}>
-            Chờ nhận ({activeTab === "NEW" ? orders.length : "?"})
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === "MY" && styles.activeTab]} 
-          onPress={() => setActiveTab("MY")}
-        >
-          <Text style={[styles.tabText, activeTab === "MY" && styles.activeTabText]}>
-            Đang giao ({activeTab === "MY" ? orders.length : "?"})
-          </Text>
         </TouchableOpacity>
       </View>
 
@@ -220,9 +229,7 @@ export default function ShipperDashboard() {
           !loading && (
             <View style={styles.emptyView}>
               <Package size={64} color="#ccc" />
-              <Text style={styles.emptyText}>
-                {activeTab === "NEW" ? "Hiện không có đơn nào cần giao" : "Bạn chưa nhận đơn nào"}
-              </Text>
+              <Text style={styles.emptyText}>Hiện không có đơn nào cần giao</Text>
             </View>
           )
         }
@@ -245,12 +252,6 @@ const styles = StyleSheet.create({
   },
   appTitle: { color: "#fff", fontSize: 20, fontWeight: "800" },
   
-  tabsContainer: { flexDirection: "row", backgroundColor: "#fff", elevation: 2 },
-  tab: { flex: 1, paddingVertical: 14, alignItems: "center", borderBottomWidth: 3, borderBottomColor: "transparent" },
-  activeTab: { borderBottomColor: "#ef6c00" },
-  tabText: { fontSize: 15, fontWeight: "600", color: "#888" },
-  activeTabText: { color: "#ef6c00" },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -272,12 +273,12 @@ const styles = StyleSheet.create({
   customerName: { fontSize: 15, fontWeight: "600", color: "#333", marginLeft: 10, flex: 1 },
   addressText: { fontSize: 16, fontWeight: "500", color: "#333", marginLeft: 10, flex: 1, lineHeight: 22 },
   itemsText: { fontSize: 14, color: "#666", marginLeft: 10, flex: 1, fontStyle: 'italic' },
-
+  
   actionRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
   iconBtn: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#4caf50",
+    backgroundColor: "#4caf50", // Xanh lá cây cho Gọi điện
     paddingVertical: 10,
     borderRadius: 8,
     justifyContent: "center",
@@ -293,8 +294,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 4
   },
-  btnGreen: { backgroundColor: "#2e7d32" },
-  btnOrange: { backgroundColor: "#ef6c00" },
+  btnOrange: { backgroundColor: "#ef6c00" }, // Cam cho nút Hoàn thành
   mainBtnText: { color: "#fff", fontSize: 16, fontWeight: "800", textTransform: "uppercase" },
 
   emptyView: { alignItems: "center", marginTop: 60 },
