@@ -167,6 +167,52 @@ export default function EditProfile() {
       return;
     }
 
+    // Validate birthDate - không được là ngày trong tương lai
+    if (birthDate) {
+      const today = new Date();
+      const birthDateObj = new Date(birthDate);
+      if (birthDateObj > today) {
+        Alert.alert("Lỗi", "Ngày sinh không thể là ngày trong tương lai");
+        return;
+      }
+    }
+
+    // Validate heightCm - phải từ 50-300cm
+    if (heightCm) {
+      const height = Number(heightCm);
+      if (isNaN(height) || height < 50 || height > 300) {
+        Alert.alert("Lỗi", "Chiều cao phải từ 50cm đến 300cm");
+        return;
+      }
+    }
+
+    // Validate weightKg - phải từ 20-500kg
+    if (weightKg) {
+      const weight = Number(weightKg);
+      if (isNaN(weight) || weight < 20 || weight > 500) {
+        Alert.alert("Lỗi", "Cân nặng phải từ 20kg đến 500kg");
+        return;
+      }
+    }
+
+    // Validate phone number
+    if (phone && phone.trim()) {
+      const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
+      if (!phoneRegex.test(phone.trim())) {
+        Alert.alert("Lỗi", "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08, 09)");
+        return;
+      }
+    }
+
+    // Validate shipping phone
+    if (shippingPhone && shippingPhone.trim()) {
+      const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
+      if (!phoneRegex.test(shippingPhone.trim())) {
+        Alert.alert("Lỗi", "Số điện thoại nhận hàng không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08, 09)");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       // Save profile
