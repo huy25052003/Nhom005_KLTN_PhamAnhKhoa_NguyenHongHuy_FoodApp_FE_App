@@ -6,12 +6,9 @@ import {
 import { useFocusEffect, router } from "expo-router";
 import { useAuth } from "../../src/store/auth"; 
 // Thay thế pickUpOrder bằng completeOrder vì bạn muốn chuyển thẳng sang DONE
-import { getShipperOrders, completeOrder } from "../../src/api/shipper"; 
+import { getShipperOrders, completeOrder } from "../../src/api/shipper";
 import { LogOut, MapPin, Phone, Package, User, Navigation } from "lucide-react-native";
-import io from 'socket.io-client';
-
-// Sử dụng URL Socket được cung cấp
-const SOCKET_URL = "https://foodappsv.id.vn/ws"; 
+// import { socketService } from "../../src/services/socketService"; // Tạm comment để fix lỗi
 
 export default function ShipperDashboard() {
   const [orders, setOrders] = useState([]);
@@ -45,22 +42,16 @@ export default function ShipperDashboard() {
   );
 
   // --- LOGIC SOCKET NHẬN ĐƠN HÀNG FDelivering ---
+  // Tạm comment để fix lỗi import
+  /*
   useEffect(() => {
     if (!auth?.token) return;
     
-    const socket = io(SOCKET_URL, {
-      extraHeaders: {
-        Authorization: `Bearer ${auth.token}`
-      },
-      transports: ['websocket'],
-    });
+    // Connect to socket service (reuses chat connection)
+    socketService.connect(auth.token);
 
-    socket.on('connect', () => {
-      // console.log("Socket connected:", socket.id);
-    });
-
-    // SỬA: Tải lại dữ liệu ngay lập tức khi nhận được đơn mới
-    socket.on('FDelivering', (order) => {
+    // Subscribe to order updates
+    const subscription = socketService.subscribe('/topic/orders', (order) => {
       if (order.status === STATUS_TO_FETCH) {
         // Tự động tải lại danh sách đơn hàng để cập nhật UI
         fetchData(); 
@@ -69,15 +60,13 @@ export default function ShipperDashboard() {
         Alert.alert("Đơn hàng mới!", `Đơn hàng #${order.id} vừa được thêm vào danh sách cần giao.`);
       }
     });
-
-    socket.on('disconnect', () => {
-      // console.log("Socket disconnected");
-    });
     
     return () => {
-      socket.disconnect();
+      // Unsubscribe on unmount (but keep connection for chat)
+      socketService.unsubscribe('/topic/orders');
     };
   }, [auth?.token, fetchData]);
+  */
   // --- KẾT THÚC LOGIC SOCKET ---
 
   const handleLogout = () => {

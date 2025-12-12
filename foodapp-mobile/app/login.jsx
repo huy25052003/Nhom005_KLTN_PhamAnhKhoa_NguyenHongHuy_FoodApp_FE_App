@@ -16,14 +16,6 @@ export default function Login() {
   const login = useLogin();
   const setAuth = useAuth((s) => s.setAuth);
 
-  const handleGoogleLogin = () => {
-    Alert.alert(
-      "Đăng nhập Google",
-      "Tính năng này yêu cầu cài đặt Firebase. Xem file SETUP_NEW_FEATURES.md để cấu hình.",
-      [{ text: "OK" }]
-    );
-  };
-
   const validateAndSubmit = async () => {
     let newErrors = {};
     
@@ -162,36 +154,12 @@ export default function Login() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Links: Quên mật khẩu & Đăng nhập SMS */}
-        <View style={styles.linksRow}>
-          <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
-            <Text style={styles.linkText}>Quên mật khẩu?</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push("/loginsms")}>
-            <Text style={styles.linkText}>Đăng nhập SMS</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>hoặc</Text>
           <View style={styles.dividerLine} />
         </View>
-
-        {/* Nút đăng nhập bằng Google */}
-        <TouchableOpacity 
-          onPress={handleGoogleLogin}
-          style={styles.googleButton}
-          activeOpacity={0.8}
-        >
-          <View style={styles.googleButtonContent}>
-            <View style={styles.googleIcon}>
-              <Text style={styles.googleIconText}>G</Text>
-            </View>
-            <Text style={styles.googleButtonText}>Đăng nhập bằng Google</Text>
-          </View>
-        </TouchableOpacity>
 
         {/* Nút tạo tài khoản mới */}
         <TouchableOpacity 
@@ -278,54 +246,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
     marginLeft: 4,
-  },
-  linksRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  linkText: {
-    color: "#4caf50",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  googleButton: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  googleButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#db4437",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  googleIconText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  googleButtonText: {
-    color: "#333",
-    fontSize: 16,
-    fontWeight: "500",
   },
   submitButton: {
     borderRadius: 16,
