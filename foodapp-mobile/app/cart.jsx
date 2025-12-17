@@ -101,11 +101,21 @@ export default function Cart() {
     }
     try {
       const items = cart?.items || cart?.cartItems || [];
-      const preview = await previewPromotion(promoCode, items);
+      const payloadItems = items.map(it => ({
+        productId: it.product?.id || it.productId,
+        quantity: it.quantity
+      }));
+      console.log("Cart items:", items);
+      console.log("Payload items:", payloadItems);
+      console.log("Promo code:", promoCode);
+      const preview = await previewPromotion(promoCode, payloadItems);
+      console.log("Preview result:", preview);
       setAppliedPromo(preview);
       setPromoError("");
       Alert.alert("Thành công", `Đã áp dụng mã giảm giá: ${promoCode}`);
     } catch (e) {
+      console.error("Promo error:", e);
+      console.error("Error response:", e?.response?.data);
       setPromoError(e?.response?.data?.message || "Mã giảm giá không hợp lệ");
       setAppliedPromo(null);
     }
@@ -425,7 +435,20 @@ export default function Cart() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.checkoutButton]}
-          onPress={() => router.push("/checkout")}
+          onPress={() => {
+            if (appliedPromo) {
+              router.push({
+                pathname: "/checkout",
+                params: {
+                  promoCode: promoCode,
+                  promoDiscount: appliedPromo.discount,
+                  promoMessage: appliedPromo.message
+                }
+              });
+            } else {
+              router.push("/checkout");
+            }
+          }}
         >
           <CreditCard color="#fff" size={18} strokeWidth={2} />
           <Text style={styles.checkoutButtonText}>Thanh toán</Text>

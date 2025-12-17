@@ -9,6 +9,7 @@ import {
   Alert,
   StatusBar,
   Linking,
+  TextInput,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ import { getMyShipping } from "../src/api/shipping";
 import { getProfile } from "../src/api/user";
 import { placeOrder } from "../src/api/order";
 import { createPaymentLink } from "../src/api/payment";
+import { previewPromotion } from "../src/api/promotions";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -34,7 +36,9 @@ import {
   ChevronLeft,
   Check,
   Loader,
-  CreditCard
+  CreditCard,
+  Tag,
+  X
 } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
@@ -46,6 +50,15 @@ export default function Checkout() {
   
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [promoCode, setPromoCode] = useState(params.promoCode || "");
+  const [appliedPromo, setAppliedPromo] = useState(
+    params.promoCode ? {
+      discount: Number(params.promoDiscount || 0),
+      message: params.promoMessage || "",
+      code: params.promoCode
+    } : null
+  );
+  const [promoError, setPromoError] = useState("");
 
   // Lấy thông tin giỏ hàng
   const { data: cart, isLoading: cartLoading, error: cartError, refetch: refetchCart } = useQuery({
@@ -80,9 +93,43 @@ export default function Checkout() {
   const loyaltyDiscountPercent = memberRank === "ĐỒNG" ? 1 : memberRank === "BẠC" ? 3 : memberRank === "VÀNG" ? 5 : memberRank === "KIM CƯƠNG" ? 10 : 0;
   const loyaltyDiscount = Math.round(subtotal * loyaltyDiscountPercent / 100);
   
-  const totalPrice = subtotal - loyaltyDiscount;
+  const discount = appliedPromo?.discount || 0;
+  const totalPrice = subtotal - loyaltyDiscount - discount;
 
   const isShippingValid = shipping && shipping.phone && shipping.addressLine;
+
+  // Hàm áp dụng mã giảm giá
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Vui lòng nhập mã giảm giá");
+      return;
+    }
+    try {
+      const payloadItems = items.map(it => ({
+        productId: it.product?.id || it.productId,
+        quantity: it.quantity
+      }));
+      console.log("Checkout items:", items);
+      console.log("Payload items:", payloadItems);
+      console.log("Promo code:", promoCode);
+      const preview = await previewPromotion(promoCode, payloadItems);
+      console.log("Preview result:", preview);
+      setAppliedPromo(preview);
+      setPromoError("");
+      Alert.alert("Thành công", `Đã áp dụng mã giảm giá: ${promoCode}`);
+    } catch (e) {
+      console.error("Promo error:", e);
+      console.error("Error response:", e?.response?.data);
+      setPromoError(e?.response?.data?.message || "Mã giảm giá không hợp lệ");
+      setAppliedPromo(null);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError("");
+  };
 
   // Hàm đặt hàng - Bước 1: Hiển thị xác nhận
   const handlePlaceOrder = async () => {
@@ -148,7 +195,8 @@ export default function Checkout() {
       const requestPayload = {
         items: orderItemsPayload,
         shippingInfo: shippingInfoPayload,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        promoCode: appliedPromo ? promoCode : null
       };
 
       console.log("Đang tạo đơn hàng với payload:", requestPayload);
@@ -344,6 +392,12 @@ export default function Checkout() {
               <Text style={styles.discountValue}>-{formatVND(loyaltyDiscount)}</Text>
             </View>
           )}
+          {discount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Giảm giá ({promoCode}):</Text>
+              <Text style={styles.discountValue}>-{formatVND(discount)}</Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Tổng cộng</Text>
@@ -462,6 +516,46 @@ export default function Checkout() {
             </View>
             {paymentMethod === "PAYOS" && <Check color="#4caf50" size={24} strokeWidth={2.5} />}
           </TouchableOpacity>
+        </View>
+
+        {/* Mã giảm giá */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Tag color="#ff6b6b" size={20} strokeWidth={2.5} />
+            <Text style={styles.sectionTitle}>Mã giảm giá</Text>
+          </View>
+          {appliedPromo ? (
+            <View style={styles.appliedPromoBox}>
+              <View style={styles.appliedPromoLeft}>
+                <Tag color="#4caf50" size={18} strokeWidth={2} />
+                <View>
+                  <Text style={styles.appliedPromoCode}>{promoCode}</Text>
+                  <Text style={styles.appliedPromoDiscount}>-{formatVND(discount)}</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={handleRemovePromo}>
+                <X color="#ff6b6b" size={20} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.couponInputContainer}>
+              <TextInput
+                style={styles.couponInput}
+                placeholder="Nhập mã giảm giá"
+                value={promoCode}
+                onChangeText={(text) => {
+                  setPromoCode(text.toUpperCase());
+                  setPromoError("");
+                }}
+                autoCapitalize="characters"
+                placeholderTextColor="#999"
+              />
+              <TouchableOpacity style={styles.applyButton} onPress={handleApplyPromo}>
+                <Text style={styles.applyButtonText}>Áp dụng</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {promoError ? <Text style={styles.errorText}>{promoError}</Text> : null}
         </View>
 
         {/* Nút đặt hàng */}
@@ -854,5 +948,66 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: 8,
     lineHeight: 22,
+  },
+  couponInputContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  couponInput: {
+    flex: 1,
+    height: 48,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  applyButton: {
+    backgroundColor: "#4caf50",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  appliedPromoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#e8f5e9",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#4caf50",
+  },
+  appliedPromoLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  appliedPromoCode: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  appliedPromoDiscount: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#4caf50",
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 13,
+    marginTop: 8,
+    fontWeight: "500",
   },
 });
