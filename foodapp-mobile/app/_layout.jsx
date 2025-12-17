@@ -1,7 +1,6 @@
 import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { View } from "react-native";
-import ChatbotWidget from "../src/components/ChatbotWidget";
 
 const queryClient = new QueryClient();
 
@@ -129,7 +128,6 @@ export default function RootLayout() {
             }} 
           />
         </Stack>
-        <ChatbotWidget />
       </View>
     </QueryClientProvider>
   );
