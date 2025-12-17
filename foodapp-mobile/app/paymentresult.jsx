@@ -167,6 +167,24 @@ export default function PaymentResult() {
     }
   };
 
+  const handleCancelPayment = () => {
+    Alert.alert(
+      "Xác nhận hủy",
+      "Bạn có chắc muốn hủy thanh toán và quay về trang chủ?",
+      [
+        {
+          text: "Không",
+          style: "cancel",
+        },
+        {
+          text: "Có",
+          onPress: () => router.push("/home"),
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
   if (state.loading) {
     return (
       <View style={styles.container}>
@@ -183,7 +201,7 @@ export default function PaymentResult() {
           )}
           <TouchableOpacity 
             style={styles.cancelButton} 
-            onPress={() => router.replace("/home")}
+            onPress={handleCancelPayment}
           >
             <Text style={styles.cancelButtonText}>Hủy</Text>
           </TouchableOpacity>

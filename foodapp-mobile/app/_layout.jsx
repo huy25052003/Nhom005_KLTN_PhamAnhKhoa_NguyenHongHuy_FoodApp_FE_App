@@ -116,6 +116,12 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
+            name="payoswebview" 
+            options={{ 
+              headerShown: false
+            }} 
+          />
+          <Stack.Screen 
             name="favorites" 
             options={{ 
               headerShown: false

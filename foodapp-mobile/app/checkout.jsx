@@ -179,22 +179,13 @@ export default function Checkout() {
           ]
         );
       } else if (paymentMethod === "PAYOS") {
-        // Thanh toán online với PayOS
+        // Thanh toán online với PayOS - Mở trong WebView trong app
         try {
           const payUrl = await createPaymentLink(order.id);
           if (!payUrl) throw new Error("Lỗi cổng thanh toán");
           
-          // Mở URL thanh toán trong browser
-          const supported = await Linking.canOpenURL(payUrl);
-          if (supported) {
-            await Linking.openURL(payUrl);
-            
-            // Chuyển ngay đến trang paymentresult để kiểm tra kết quả
-            // User có thể quay lại app từ browser
-            router.replace(`/paymentresult?orderId=${order.id}&paymentUrl=${encodeURIComponent(payUrl)}`);
-          } else {
-            throw new Error("Không thể mở link thanh toán");
-          }
+          // Chuyển đến màn hình PayOS WebView trong app
+          router.replace(`/payoswebview?orderId=${order.id}&paymentUrl=${encodeURIComponent(payUrl)}`);
         } catch (paymentError) {
           Alert.alert(
             "Lỗi thanh toán",
