@@ -222,7 +222,7 @@ export default function Home() {
             <View style={styles.heroActions}>
               <TouchableOpacity
                 style={styles.primaryButton}
-                onPress={() => navigation.navigate("order")}
+                onPress={() => navigation.navigate("menu")}
               >
                 <Utensils color="#fff" size={20} strokeWidth={2} />
                 <Text style={styles.buttonText}>Đặt ngay</Text>

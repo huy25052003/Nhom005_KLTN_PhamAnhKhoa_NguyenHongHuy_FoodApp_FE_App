@@ -1,18 +1,19 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { 
   View, Text, FlatList, TouchableOpacity, StyleSheet, 
   Alert, RefreshControl, StatusBar, Linking, Platform 
 } from "react-native";
 import { useFocusEffect, router } from "expo-router";
 import { useAuth } from "../../src/store/auth"; 
-// Thay thế pickUpOrder bằng completeOrder vì bạn muốn chuyển thẳng sang DONE
 import { getShipperOrders, completeOrder } from "../../src/api/shipper";
 import { LogOut, MapPin, Phone, Package, User, Navigation } from "lucide-react-native";
-// import { socketService } from "../../src/services/socketService"; // Tạm comment để fix lỗi
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
 export default function ShipperDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const stompClientRef = useRef(null);
   
   const auth = useAuth(s => s.auth);
   const setAuth = useAuth(s => s.setAuth);
@@ -20,54 +21,96 @@ export default function ShipperDashboard() {
   // Trạng thái đơn hàng cần lấy: DELIVERING (Sẵn sàng giao, không cần nhận)
   const STATUS_TO_FETCH = "DELIVERING";
 
-  // Đảm bảo fetchData là một hàm ổn định (stable function)
-  const fetchData = useCallback(async () => {
+  // Hàm fetch data
+  const fetchData = async () => {
     setLoading(true);
     try {
       const data = await getShipperOrders(STATUS_TO_FETCH);
-      
       const filtered = (Array.isArray(data) ? data : []).filter(o => o.status === STATUS_TO_FETCH);
       setOrders(filtered.reverse());
+      console.log("✅ Fetched shipper orders:", filtered.length);
     } catch (e) {
-      // console.log("Shipper fetch error:", e);
+      console.log("❌ Shipper fetch error:", e);
     } finally {
       setLoading(false);
     }
-  }, [setOrders, setLoading]);
+  };
 
+  // Fetch khi vào màn hình
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [fetchData])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
   );
 
-  // --- LOGIC SOCKET NHẬN ĐƠN HÀNG FDelivering ---
-  // Tạm comment để fix lỗi import
-  /*
+  // WebSocket - Nhận notification real-time từ admin
   useEffect(() => {
     if (!auth?.token) return;
-    
-    // Connect to socket service (reuses chat connection)
-    socketService.connect(auth.token);
 
-    // Subscribe to order updates
-    const subscription = socketService.subscribe('/topic/orders', (order) => {
-      if (order.status === STATUS_TO_FETCH) {
-        // Tự động tải lại danh sách đơn hàng để cập nhật UI
-        fetchData(); 
-        
-        // Chỉ hiện thông báo, không chặn luồng fetch
-        Alert.alert("Đơn hàng mới!", `Đơn hàng #${order.id} vừa được thêm vào danh sách cần giao.`);
-      }
+    const client = new Client({
+      webSocketFactory: () => new SockJS("https://foodappsv.id.vn/ws"),
+      connectHeaders: {
+        Authorization: `Bearer ${auth.token}`
+      },
+      debug: (str) => {
+        console.log("🔌 STOMP:", str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
     });
-    
-    return () => {
-      // Unsubscribe on unmount (but keep connection for chat)
-      socketService.unsubscribe('/topic/orders');
+
+    client.onConnect = () => {
+      console.log("✅ WebSocket connected (Shipper)");
+      
+      // Subscribe /topic/admin/orders - Nhận khi có đơn mới hoặc cập nhật
+      client.subscribe('/topic/admin/orders', (message) => {
+        console.log("📦 Received from /topic/admin/orders");
+        refreshOrders();
+      });
+      
+      // Subscribe /topic/kitchen/update - Nhận khi bếp finish order → DELIVERING
+      client.subscribe('/topic/kitchen/update', (message) => {
+        console.log("📦 Received from /topic/kitchen/update");
+        refreshOrders();
+      });
+      
+      console.log("✅ Subscribed to topics");
     };
-  }, [auth?.token, fetchData]);
-  */
-  // --- KẾT THÚC LOGIC SOCKET ---
+    
+    // Hàm refresh danh sách
+    const refreshOrders = () => {
+      getShipperOrders(STATUS_TO_FETCH)
+        .then(data => {
+          const filtered = (Array.isArray(data) ? data : []).filter(o => o.status === STATUS_TO_FETCH);
+          setOrders(filtered.reverse());
+          console.log("✅ Updated orders from WebSocket:", filtered.length);
+        })
+        .catch(e => {
+          console.log("❌ Error fetching after notification:", e);
+        });
+    };
+
+    client.onStompError = (frame) => {
+      console.error("❌ STOMP error:", frame.headers?.message);
+    };
+
+    client.onDisconnect = () => {
+      console.log("🔌 WebSocket disconnected (Shipper)");
+    };
+
+    client.activate();
+    stompClientRef.current = client;
+
+    return () => {
+      if (stompClientRef.current) {
+        stompClientRef.current.deactivate();
+        stompClientRef.current = null;
+        console.log("🔌 WebSocket cleanup");
+      }
+    };
+  }, [auth?.token, STATUS_TO_FETCH]);
 
   const handleLogout = () => {
     Alert.alert("Đăng xuất", "Bạn muốn đăng xuất?", [
@@ -173,12 +216,12 @@ export default function ShipperDashboard() {
         
         {/* Nút Gọi điện và Chỉ đường */}
         <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => handleCall(phone)}>
+            <TouchableOpacity style={styles.iconBtnCall} onPress={() => handleCall(phone)}>
               <Phone size={20} color="#fff" />
               <Text style={styles.iconBtnText}>Gọi điện</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: '#2196f3' }]} onPress={() => handleMap(address)}>
+            <TouchableOpacity style={styles.iconBtnMap} onPress={() => handleMap(address)}>
               <Navigation size={20} color="#fff" />
               <Text style={styles.iconBtnText}>Chỉ đường</Text>
             </TouchableOpacity>
@@ -197,11 +240,11 @@ export default function ShipperDashboard() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#ef6c00" />
+      <StatusBar barStyle="light-content" backgroundColor="#4caf50" />
       
       {/* App Bar */}
       <View style={styles.appBar}>
-        <Text style={styles.appTitle}>Đơn hàng cần giao ({orders.length}) 🛵</Text>
+        <Text style={styles.appTitle}>Đơn hàng cần giao ({orders.length})</Text>
         <TouchableOpacity onPress={handleLogout}>
           <LogOut color="#fff" size={24} />
         </TouchableOpacity>
@@ -213,7 +256,7 @@ export default function ShipperDashboard() {
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} colors={["#ef6c00"]} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} colors={["#4caf50"]} />}
         ListEmptyComponent={
           !loading && (
             <View style={styles.emptyView}>
@@ -230,7 +273,7 @@ export default function ShipperDashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f3f4f6" },
   appBar: {
-    backgroundColor: "#ef6c00",
+    backgroundColor: "#4caf50",
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
@@ -264,10 +307,20 @@ const styles = StyleSheet.create({
   itemsText: { fontSize: 14, color: "#666", marginLeft: 10, flex: 1, fontStyle: 'italic' },
   
   actionRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  iconBtn: {
+  iconBtnCall: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#4caf50", // Xanh lá cây cho Gọi điện
+    backgroundColor: "#4caf50", // Xanh lá cho Gọi điện
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6
+  },
+  iconBtnMap: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "#2196f3", // Xanh dương cho Chỉ đường
     paddingVertical: 10,
     borderRadius: 8,
     justifyContent: "center",
