@@ -7,11 +7,11 @@ export default {
     scheme: "foodapp",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/foodapp.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash-icon.png",
+      image: "./assets/foodapp.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
@@ -21,8 +21,8 @@ export default {
     android: {
       package: "com.foodapp.mobile",
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff"
+        foregroundImage: "./assets/foodapp.png",
+        backgroundColor: "#3d7e4a"
       },
       edgeToEdgeEnabled: true
     },
