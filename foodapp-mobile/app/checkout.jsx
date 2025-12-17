@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  Linking,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { getCart, clearCart } from "../src/api/cart";
 import { getMyShipping } from "../src/api/shipping";
 import { getProfile } from "../src/api/user";
 import { placeOrder } from "../src/api/order";
+import { createPaymentLink } from "../src/api/payment";
 import { useAuth } from "../src/store/auth";
 import { useCart } from "../src/store/cart";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,7 +33,8 @@ import {
   FileText,
   ChevronLeft,
   Check,
-  Loader
+  Loader,
+  CreditCard
 } from 'lucide-react-native';
 
 const formatVND = (n) => (n ?? 0).toLocaleString("vi-VN") + " đ";
@@ -42,6 +45,7 @@ export default function Checkout() {
   const { setCount } = useCart();
   
   const [placing, setPlacing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
 
   // Lấy thông tin giỏ hàng
   const { data: cart, isLoading: cartLoading, error: cartError, refetch: refetchCart } = useQuery({
@@ -80,7 +84,7 @@ export default function Checkout() {
 
   const isShippingValid = shipping && shipping.phone && shipping.addressLine;
 
-  // Hàm đặt hàng
+  // Hàm đặt hàng - Bước 1: Hiển thị xác nhận
   const handlePlaceOrder = async () => {
     if (!items.length) {
       Alert.alert("Lỗi", "Giỏ hàng trống.");
@@ -102,6 +106,30 @@ export default function Checkout() {
       return;
     }
 
+    // Hiển thị xác nhận thanh toán
+    const paymentMethodText = paymentMethod === "COD" ? "COD (Thanh toán khi nhận hàng)" : "PayOS (Thanh toán online)";
+    Alert.alert(
+      "Xác nhận đặt hàng",
+      `Phương thức: ${paymentMethodText}\nTổng tiền: ${formatVND(totalPrice)}\n\nBạn có chắc muốn đặt hàng?`,
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+          onPress: () => {
+            // Quay về giỏ hàng
+            router.push("/cart");
+          }
+        },
+        {
+          text: "Thanh toán",
+          onPress: () => handleConfirmOrder(),
+        },
+      ]
+    );
+  };
+
+  // Hàm đặt hàng - Bước 2: Xử lý sau khi xác nhận
+  const handleConfirmOrder = async () => {
     setPlacing(true);
     try {
       // Tạo payload giống như web
@@ -120,7 +148,7 @@ export default function Checkout() {
       const requestPayload = {
         items: orderItemsPayload,
         shippingInfo: shippingInfoPayload,
-        paymentMethod: "COD"
+        paymentMethod: paymentMethod
       };
 
       console.log("Đang tạo đơn hàng với payload:", requestPayload);
@@ -131,25 +159,49 @@ export default function Checkout() {
         throw new Error("Không tạo được đơn hàng.");
       }
 
-      // Đặt hàng thành công với COD
-      Alert.alert(
-        "Thành công",
-        `Đặt hàng thành công! Mã đơn: ${order.id}\nBạn sẽ thanh toán khi nhận hàng.`,
-        [
-          {
-            text: "OK",
-            onPress: async () => {
-              try {
-                await clearCart();
-                setCount(0);
-              } catch (e) {
-                console.warn("Không thể clear cart:", e);
-              }
-              router.replace("/home");
+      if (paymentMethod === "COD") {
+        // Đặt hàng thành công với COD - Về home ngay
+        try {
+          await clearCart();
+          setCount(0);
+        } catch (e) {
+          console.warn("Không thể clear cart:", e);
+        }
+        
+        Alert.alert(
+          "Thành công",
+          `Đặt hàng thành công! Mã đơn: ${order.id}\nBạn sẽ thanh toán khi nhận hàng.`,
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/home"),
             },
-          },
-        ]
-      );
+          ]
+        );
+      } else if (paymentMethod === "PAYOS") {
+        // Thanh toán online với PayOS
+        try {
+          const payUrl = await createPaymentLink(order.id);
+          if (!payUrl) throw new Error("Lỗi cổng thanh toán");
+          
+          // Mở URL thanh toán trong browser
+          const supported = await Linking.canOpenURL(payUrl);
+          if (supported) {
+            await Linking.openURL(payUrl);
+            
+            // Chuyển ngay đến trang paymentresult để kiểm tra kết quả
+            // User có thể quay lại app từ browser
+            router.replace(`/paymentresult?orderId=${order.id}&paymentUrl=${encodeURIComponent(payUrl)}`);
+          } else {
+            throw new Error("Không thể mở link thanh toán");
+          }
+        } catch (paymentError) {
+          Alert.alert(
+            "Lỗi thanh toán",
+            paymentError?.message || "Không thể tạo link thanh toán"
+          );
+        }
+      }
 
     } catch (error) {
       console.error("Lỗi đặt hàng:", error);
@@ -379,18 +431,46 @@ export default function Checkout() {
             <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
           </View>
           
-          <View style={[styles.paymentOption, styles.paymentOptionSelected]}>
+          {/* COD Option */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOption,
+              paymentMethod === "COD" && styles.paymentOptionSelected
+            ]}
+            onPress={() => setPaymentMethod("COD")}
+          >
             <View style={styles.paymentLeft}>
               <View style={styles.radioButton}>
-                <View style={styles.radioSelected} />
+                {paymentMethod === "COD" && <View style={styles.radioSelected} />}
               </View>
               <View>
-                <Text style={styles.paymentTitle}>COD</Text>
-                <Text style={styles.paymentSubtitle}>Thanh toán khi nhận hàng</Text>
+                <Text style={styles.paymentTitle}>Thanh toán khi nhận hàng (COD)</Text>
+                <Text style={styles.paymentSubtitle}>Thanh toán tiền mặt cho shipper</Text>
               </View>
             </View>
-            <Check color="#4caf50" size={24} strokeWidth={2.5} />
-          </View>
+            {paymentMethod === "COD" && <Check color="#4caf50" size={24} strokeWidth={2.5} />}
+          </TouchableOpacity>
+
+          {/* PayOS Option */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOption,
+              paymentMethod === "PAYOS" && styles.paymentOptionSelected,
+              { marginTop: 12 }
+            ]}
+            onPress={() => setPaymentMethod("PAYOS")}
+          >
+            <View style={styles.paymentLeft}>
+              <View style={styles.radioButton}>
+                {paymentMethod === "PAYOS" && <View style={styles.radioSelected} />}
+              </View>
+              <View>
+                <Text style={styles.paymentTitle}>Thanh toán Online (PayOS)</Text>
+                <Text style={styles.paymentSubtitle}>Quét mã QR ngân hàng / Ví điện tử</Text>
+              </View>
+            </View>
+            {paymentMethod === "PAYOS" && <Check color="#4caf50" size={24} strokeWidth={2.5} />}
+          </TouchableOpacity>
         </View>
 
         {/* Nút đặt hàng */}
@@ -409,7 +489,7 @@ export default function Checkout() {
               <Check color="#fff" size={20} strokeWidth={2.5} />
             )}
             <Text style={styles.placeOrderButtonText}>
-              {placing ? "Đang xử lý..." : "Đặt hàng (COD)"}
+              {placing ? "Đang xử lý..." : `Đặt hàng${paymentMethod === "PAYOS" ? " (PayOS)" : " (COD)"}`}
             </Text>
           </TouchableOpacity>
           <Text style={styles.footerNote}>

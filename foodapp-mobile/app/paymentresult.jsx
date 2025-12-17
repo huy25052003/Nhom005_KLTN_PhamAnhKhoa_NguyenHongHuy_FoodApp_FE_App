@@ -89,6 +89,12 @@ export default function PaymentResult() {
             status: st,
             hintOk: true,
           });
+          
+          // Tự động về trang chủ sau 2 giây
+          setTimeout(() => {
+            router.replace("/home");
+          }, 2000);
+          
           return;
         }
 
@@ -175,6 +181,12 @@ export default function PaymentResult() {
               Mã đơn: <Text style={styles.orderId}>{state.orderId}</Text>
             </Text>
           )}
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={() => router.replace("/home")}
+          >
+            <Text style={styles.cancelButtonText}>Hủy</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -314,6 +326,19 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: "#6c757d",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: "#dc3545",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+    width: "100%",
+  },
+  cancelButtonText: {
+    color: "#fff",
     fontWeight: "600",
     fontSize: 16,
   },
