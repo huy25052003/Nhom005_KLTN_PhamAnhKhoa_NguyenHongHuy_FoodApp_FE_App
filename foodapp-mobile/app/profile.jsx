@@ -35,22 +35,36 @@ export default function Profile() {
     let rank = "Đồng";
     let icon = "🌱";
     let discount = "1%";
+    let nextRank = "Bạc";
+    let progress = Math.min(100, (points / 100) * 100);
+    let nextPoints = 100;
     
     if (points >= 2000) {
       rank = "Kim Cương";
       icon = "💎";
       discount = "10%";
+      nextRank = "Max";
+      progress = 100;
+      nextPoints = 2000;
     } else if (points >= 500) {
       rank = "Vàng";
       icon = "🥇";
       discount = "5%";
+      nextRank = "Kim Cương";
+      progress = ((points - 500) / 1500) * 100;
+      nextPoints = 2000;
     } else if (points >= 100) {
       rank = "Bạc";
       icon = "🥈";
       discount = "3%";
+      nextRank = "Vàng";
+      progress = ((points - 100) / 400) * 100;
+      nextPoints = 500;
+    } else {
+      nextPoints = 100;
     }
     
-    return { rank, icon, discount, points };
+    return { rank, icon, discount, points, nextRank, progress, nextPoints };
   }, [me?.points]);
 
   // Calculate TDEE
@@ -111,6 +125,36 @@ export default function Profile() {
 
       {/* Danh sách menu */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Membership Card */}
+        <View style={styles.membershipSection}>
+          <View style={styles.membershipCard}>
+            <View style={styles.membershipCardHeader}>
+              <Text style={styles.membershipCardIcon}>{membershipInfo.icon}</Text>
+              <View style={styles.membershipCardInfo}>
+                <Text style={styles.membershipCardRank}>{membershipInfo.rank}</Text>
+                <Text style={styles.membershipCardPoints}>{membershipInfo.points} điểm</Text>
+              </View>
+            </View>
+            
+            {/* Progress Bar */}
+            {membershipInfo.nextRank !== "Max" && (
+              <View style={styles.progressSection}>
+                <Text style={styles.progressLabel}>
+                  Tiến độ lên {membershipInfo.nextRank} ({membershipInfo.nextPoints - membershipInfo.points} điểm nữa)
+                </Text>
+                <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarFill, { width: `${membershipInfo.progress}%` }]} />
+                </View>
+              </View>
+            )}
+            
+            <View style={styles.membershipCardBenefit}>
+              <Award color="#4caf50" size={18} strokeWidth={2} />
+              <Text style={styles.membershipCardBenefitText}>Giảm {membershipInfo.discount} mỗi đơn hàng</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Thông tin cá nhân */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
@@ -264,5 +308,79 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#f44336",
+  },
+  membershipSection: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  membershipCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#4caf50",
+  },
+  membershipCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  membershipCardIcon: {
+    fontSize: 48,
+    marginRight: 16,
+  },
+  membershipCardInfo: {
+    flex: 1,
+  },
+  membershipCardRank: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 4,
+  },
+  membershipCardPoints: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
+  },
+  progressSection: {
+    marginBottom: 16,
+  },
+  progressLabel: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#4caf50",
+    borderRadius: 4,
+  },
+  membershipCardBenefit: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f8f4",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  membershipCardBenefitText: {
+    fontSize: 15,
+    color: "#4caf50",
+    fontWeight: "600",
   },
 });
